@@ -1,0 +1,87 @@
+TOOLPATH = ../../z_tools/
+INCPATH  = ../../z_tools/nick/
+
+MAKE       = $(TOOLPATH)make.exe -r
+NASK       = $(TOOLPATH)nask.exe
+CC1        = $(TOOLPATH)cc1.exe -I$(INCPATH) -I../ -Os -Wall -quiet
+GAS2NASK   = $(TOOLPATH)gas2nask.exe -a
+OBJ2BIM    = $(TOOLPATH)obj2bim.exe
+MAKEFONT   = $(TOOLPATH)makefont.exe
+BIN2OBJ    = $(TOOLPATH)bin2obj.exe
+BIM2NCK    = $(TOOLPATH)bim2nck.exe
+RULEFILE   = ../nick.rul
+EDIMG      = $(TOOLPATH)edimg.exe
+WRITE      = $(TOOLPATH)img_writer.exe
+GOLIB	   = $(TOOLPATH)golib00.exe
+BIM2BIN	   = $(TOOLPATH)bim2bin.exe -osacmp
+APILIBPATH = ../apilib/
+NICKPATH   = ../nick/
+RFUNCPATH  = ../rfunc
+COPY       = copy
+DEL        = del
+
+
+default : 
+	$(MAKE) $(APP).nck
+	
+$(APP).bim : $(APP).obj $(APILIBPATH)apilib.lib Makefile ../app_make.txt ../rfunc/rfunc.lib
+	$(OBJ2BIM) @$(RULEFILE) out:$(APP).bim map:$(APP).map stack:$(STACK) \
+		$(APP).obj $(APILIBPATH)apilib.lib
+		
+nick.img : $(NICKPATH)nick.sys $(NICKPATH)ipl10.bin $(APP).nck Makefile ../app_make.txt
+	$(EDIMG)   imgin:../../z_tools/fdimg0at.tek \
+		wbinimg src:../nick/ipl10.bin len:512 from:0 to:0 \
+		copy from:$(NICKPATH)nick.sys to:@: \
+		copy from:$(NICKPATH)ipl10.nas to:@:\
+		copy from:$(APP).nck to:@:\
+		copy from:$(APP).c to:@:\
+		copy from:../chinese/chinese.fnt to:@:\
+		imgout:nick.img
+		
+$(APP).org : $(APP).bim Makefile ../app_make.txt
+	$(BIM2NCK) $(APP).bim $(APP).org $(MALLOC)
+	
+$(APP).nck : $(APP).org Makefile ../app_make.txt
+	$(BIM2BIN) in:$(APP).org out:$(APP).nck
+	
+%.gas : %.c ../apilib.h Makefile ../app_make.txt
+	$(CC1) -o $*.gas $*.c
+
+%.nas : %.gas Makefile ../app_make.txt
+	$(GAS2NASK) $*.gas $*.nas
+
+%.obj : %.nas Makefile ../app_make.txt
+	$(NASK) $*.nas $*.obj $*.lst
+
+tek2 : $(APP).org Makefile ../app_make.txt 
+	$(BIM2BIN) in:$(APP).org out:$(APP).nck -tek2
+	
+run : 
+	$(MAKE) nick.img
+	$(COPY) nick.img ..\..\z_tools\qemu\fdimage0.bin
+	$(MAKE) -C ../../z_tools/qemu
+	
+full :
+	$(MAKE) -C $(APILIBPATH)
+	$(MAKE) -C $(RFUNCPATH)
+	$(MAKE) $(APP).nck
+	
+run_full :
+	$(MAKE) -C $(APILIBPATH)
+	$(MAKE) -C $(RFUNCPATH)
+	$(MAKE) -C $(NICKPATH)
+	$(MAKE) -C ../chinese
+	$(MAKE) run
+	
+clean :
+	-$(DEL) *.lst
+	-$(DEL) *.obj
+	-$(DEL) *.map
+	-$(DEL) *.bim
+	-$(DEL) *.org
+
+src_only :
+	-$(DEL) $(APP).nck
+	-$(DEL) nick.img
+	$(MAKE) clean
+	
