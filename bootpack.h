@@ -64,6 +64,7 @@ void init_mouse_cursor8(char *mouse, char bc);
 void putblock8_8(char *vram, int vxsize, int pxsize,
 	int pysize, int px0, int py0, char *buf, int bxsize);
 int get_bc(char *buf);
+unsigned char rgb2pal(int r, int g, int b, int x, int y);
 #define COL8_000000		0
 #define COL8_FF0000		1
 #define COL8_00FF00		2
@@ -103,6 +104,7 @@ void set_gatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 #define LIMIT_BOTPAK	0x0007ffff
 #define AR_DATA32_RW	0x4092
 #define AR_CODE32_ER	0x409a
+#define	AR_LDT			0x0082
 #define AR_TSS32		0x0089
 #define AR_INTGATE32	0x008e
 
@@ -221,7 +223,8 @@ struct TASK {
 	struct FIFO32 fifo;
 	struct TSS32 tss;
 	struct CONSOLE *cons;
-	int ds_base;
+	struct SEGMENT_DESCRIPTOR ldt[2];
+	int ds_base, stack;
 };
 struct TASKLEVEL {
 	int running;
@@ -234,6 +237,7 @@ struct TASKCTL {
 	struct TASKLEVEL level[MAX_TASKLEVELS];
 	struct TASK tasks0[MAX_TASKS];
 };
+extern struct TASKCTL *taskctl;
 extern struct TIMER *task_timer;
 struct TASK *task_now(void);
 struct TASK *task_init(struct MEMMAN *memman);
@@ -317,3 +321,11 @@ unsigned int involution(unsigned int base, unsigned int exponent);
 
 /* disk.c */
 unsigned int readSector(unsigned int partitionOffset, unsigned int driveNumber, unsigned int lba, unsigned char *data, int limit);
+
+/* bootpack.c */
+void keywin_on(struct SHEET *key_win);
+void keywin_off(struct SHEET *key_win);
+struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal);
+void close_constask(struct TASK *task);
+void close_console(struct SHEET *sht);
+struct TASK *open_constask(struct SHEET *sht, unsigned int memtotal);

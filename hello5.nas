@@ -14,6 +14,7 @@ _HariMain:
 		MOV		EDX,4
 		INT		0x40
 		
+		
 [SECTION .data]
 
 msg:

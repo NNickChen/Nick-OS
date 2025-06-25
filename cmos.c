@@ -56,7 +56,7 @@ void time_task(struct SHEET *sht_back)
 	char s[20];
 	int fifobuf[12];
 	struct TIMER *timer;
-	struct TIME *time = ADR_TIME;
+	struct TIME *time = (struct TIME *) ADR_TIME;
 	
 	fifo32_init(&task->fifo, 12, fifobuf, task);
 	timer = timer_alloc();

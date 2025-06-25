@@ -59,37 +59,6 @@ void make_wtitle8(unsigned char *buf, int xsize, char *title, char act)
 			buf[(5 + y) * xsize + (xsize - 21 + x)] = c;
 		}
 	}
-	static char invbtn[14][16] = {
-		"OOOOOOOOOOOOOOO@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQ@@@@@@@@@QQ$@",
-		"OQQ@@@@@@@@@QQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"O$$$$$$$$$$$$$$@",
-		"@@@@@@@@@@@@@@@@"
-	};
-	for (y = 0; y < 14; y++) {
-		for (x = 0; x < 16; x++) {
-			c = invbtn[y][x];
-			if (c == '@') {
-				c = COL8_000000;
-			} else if (c == '$') {
-				c = COL8_848484;
-			} else if (c == 'Q') {
-				c = COL8_C6C6C6;
-			} else {
-				c = COL8_FFFFFF;
-			}
-			buf[(5 + y) * xsize + (xsize - 38 + x)] = c;
-		}
-	}
 	return;
 }
 
@@ -161,37 +130,5 @@ void change_wtitle8(struct SHEET *sht, char act)
 			buf[(5 + y) * xsize + (xsize - 21 + x)] = c;
 		}
 	}
-	static char invbtn[14][16] = {
-		"OOOOOOOOOOOOOOO@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQ@@@@@@@@@QQ$@",
-		"OQQ@@@@@@@@@QQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"OQQQQQQQQQQQQQ$@",
-		"O$$$$$$$$$$$$$$@",
-		"@@@@@@@@@@@@@@@@"
-	};
-	for (y = 0; y < 14; y++) {
-		for (x = 0; x < 16; x++) {
-			c = invbtn[y][x];
-			if (c == '@') {
-				c = COL8_000000;
-			} else if (c == '$') {
-				c = COL8_848484;
-			} else if (c == 'Q') {
-				c = COL8_C6C6C6;
-			} else {
-				c = COL8_FFFFFF;
-			}
-			buf[(5 + y) * xsize + (xsize - 38 + x)] = c;
-		}
-	}
-	sheet_refresh(sht, 0, 0, xsize, 21);
 	return;
 }

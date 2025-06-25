@@ -1,9 +1,4 @@
-void api_initmalloc(void);
-int api_malloc(int size);
-int api_openwin(char *buf, int xsize, int ysize, int col_inv, char *title);
-void api_refreshwin(int win, int x0, int y0, int x1, int y1);
-void api_end(void);
-int api_getkey(int mode);
+#include "apilib.h"
 unsigned char rgb2pal(int r, int g, int b, int x, int y);
 
 void HariMain(void)
