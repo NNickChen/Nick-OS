@@ -19,6 +19,7 @@ DEL      = del
 
 default :
 	$(MAKE) ipl10.bin
+	$(MAKE) -C ../rfunc
 	$(MAKE) nick.sys
 
 ipl10.bin : ipl10.nas Makefile

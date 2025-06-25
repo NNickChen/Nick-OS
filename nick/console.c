@@ -115,11 +115,11 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
 	task->fhandle = fhandle;
 	task->fat = fat;
 	if(task->langmode == 0){
-		putfonts8_asc_sht(cons.sht, 8, 28, COL8_FFFFFF, COL8_000000, "Nick OS [Version  0.0.9]", 23);
+		putfonts8_asc_sht(cons.sht, 8, 28, COL8_FFFFFF, COL8_000000, "Nick OS [Version 0.1.0.20180116_alpha]", 40);
 		putfonts8_asc_sht(cons.sht, 8, 44, COL8_FFFFFF, COL8_000000, "(c) 2018 Nick ", 26);
 		putfonts8_asc_sht(cons.sht, 8, 60, COL8_FFFFFF, COL8_000000, "Mode:English ASCII mode.", 19);
 	} else if(task->langmode == 1){
-		putfonts8_asc_sht(cons.sht, 8, 28, COL8_FFFFFF, COL8_000000, "Nick OS [版本  0.0.9]", 23);
+		putfonts8_asc_sht(cons.sht, 8, 28, COL8_FFFFFF, COL8_000000, "Nick OS [版本 0.1.0.20180116_alpha]", 40);
 		putfonts8_asc_sht(cons.sht, 8, 44, COL8_FFFFFF, COL8_000000, "(c) 2018 Nick 保留所有权利。", 26);
 		putfonts8_asc_sht(cons.sht, 8, 60, COL8_FFFFFF, COL8_000000, "当前显示模式：中文EUC模式。", 30);
 	}

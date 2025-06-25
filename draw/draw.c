@@ -18,7 +18,9 @@ void NickStartup(void)
 	api_txtbox(win, 8, 28, 184, 163, 7);
 	for(;;){
 		api_getmouse(win, 1, mx, my);
-		api_point(win, *mx, *my, 0);
+		if(8 <= *mx && *mx <= 190 && 28 <= *my && *my <= 163){
+			api_point(win, *mx, *my, 0);
+		}
 	}
 	api_end();
 }

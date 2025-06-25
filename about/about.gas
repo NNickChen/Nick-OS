@@ -1,0 +1,120 @@
+	.file	"about.c"
+	.data
+LC0:
+	.ascii "\271\330\323\332...\0"
+LC2:
+	.ascii "Nick OS\0"
+LC3:
+	.ascii "[version 0.1.0.20180116_alpha]\0"
+LC4:
+	.ascii "(c) 2018 Nick\0"
+LC5:
+	.ascii "[\260\346\261\276 0.1.0.20180116_alpha]\0"
+LC6:
+	.ascii "(c) 2018 Nick \261\243\301\364\313\371\323\320\310\250\300\373\241\243\0"
+LC1:
+	.ascii "about...\0"
+	.text
+	.balign 2
+.globl _NickStartup
+	.def	_NickStartup;	.scl	2;	.type	32;	.endef
+_NickStartup:
+	pushl	%ebp
+	movl	%esp, %ebp
+	pushl	%esi
+	pushl	%ebx
+	call	_api_getlang
+	movl	%eax, %esi
+	call	_api_initmalloc
+	pushl	$27000
+	call	_api_malloc
+	movl	%eax, %ebx
+	call	_api_getlang
+	testl	%eax, %eax
+	popl	%ecx
+	je	L2
+	pushl	$0
+	pushl	$LC0
+L10:
+	pushl	$-1
+	pushl	$100
+	pushl	$270
+	pushl	%ebx
+	call	_api_openwin
+	addl	$24, %esp
+	movl	%eax, %ebx
+	pushl	$0
+	pushl	$63
+	pushl	$254
+	pushl	$28
+	pushl	$8
+	pushl	%eax
+	call	_api_txtbox
+	addl	$24, %esp
+	testl	%esi, %esi
+	jne	L4
+	pushl	$LC2
+	pushl	$7
+	pushl	$7
+	pushl	$32
+	pushl	$12
+	pushl	%ebx
+	call	_api_putstrwin
+	pushl	$LC3
+	pushl	$30
+	pushl	$7
+	pushl	$48
+	pushl	$12
+	pushl	%ebx
+	call	_api_putstrwin
+	addl	$48, %esp
+	pushl	$LC4
+	pushl	$13
+L11:
+	pushl	$7
+	pushl	$64
+	pushl	$12
+	pushl	%ebx
+	call	_api_putstrwin
+	addl	$24, %esp
+L6:
+	pushl	$1
+	call	_api_getkey
+	popl	%edx
+	cmpl	$251, %eax
+	jne	L6
+	jmp	L12
+L4:
+	pushl	$LC2
+	pushl	$7
+	pushl	$7
+	pushl	$32
+	pushl	$12
+	pushl	%ebx
+	call	_api_putstrwin
+	pushl	$LC5
+	pushl	$30
+	pushl	$7
+	pushl	$48
+	pushl	$12
+	pushl	%ebx
+	call	_api_putstrwin
+	addl	$48, %esp
+	pushl	$LC6
+	pushl	$28
+	jmp	L11
+L2:
+	pushl	$0
+	pushl	$LC1
+	jmp	L10
+L12:
+	pushl	$0
+	call	_exit
+	.def	_exit;	.scl	2;	.type	32;	.endef
+	.def	_api_getkey;	.scl	2;	.type	32;	.endef
+	.def	_api_putstrwin;	.scl	2;	.type	32;	.endef
+	.def	_api_txtbox;	.scl	2;	.type	32;	.endef
+	.def	_api_openwin;	.scl	2;	.type	32;	.endef
+	.def	_api_malloc;	.scl	2;	.type	32;	.endef
+	.def	_api_initmalloc;	.scl	2;	.type	32;	.endef
+	.def	_api_getlang;	.scl	2;	.type	32;	.endef

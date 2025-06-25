@@ -32,7 +32,7 @@ void cmd(struct CONSOLE *cons, unsigned int memtotal, int *fat, char *cmdline)
 		shutdown2();
 	} else if (strcmp(cmdline, "getlang") == 0){
 		cmd_getlang(cons);
-	} else if (cmdline[0] != 0){		
+	} else if (cmdline[0] != 0 && cmdline[0]!=' '){		
 		if(cmd_run(cons, cmdline, fat) == 0){
 			if(task->langmode == 0){
 				cons_putstr0(cons, "Bad command.\n\n");
