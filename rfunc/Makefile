@@ -1,4 +1,4 @@
-OBJS_RFUNC = putchar.obj exit.obj printf.obj malloc.obj free.obj
+OBJS_RFUNC = putchar.obj exit.obj printf.obj malloc.obj free.obj puts.obj naskfunc.obj
 		
 TOOLPATH = ../../z_tools/
 INCPATH  = ../../z_tools/nick/

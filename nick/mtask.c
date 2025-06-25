@@ -1,5 +1,3 @@
-/* マルチタスク関係 */
-
 #include "bootpack.h"
 
 struct TASKCTL *taskctl;
@@ -16,7 +14,7 @@ void task_add(struct TASK *task)
 	struct TASKLEVEL *tl = &taskctl->level[task->level];
 	tl->tasks[tl->running] = task;
 	tl->running++;
-	task->flags = 2; /* 動作中 */
+	task->flags = 2; 
 	return;
 }
 
@@ -25,7 +23,6 @@ void task_remove(struct TASK *task)
 	int i;
 	struct TASKLEVEL *tl = &taskctl->level[task->level];
 
-	/* taskがどこにいるかを探す */
 	for (i = 0; i < tl->running; i++) {
 		if (tl->tasks[i] == task) {
 			/* ここにいた */
@@ -35,15 +32,13 @@ void task_remove(struct TASK *task)
 
 	tl->running--;
 	if (i < tl->now) {
-		tl->now--; /* ずれるので、これもあわせておく */
+		tl->now--; 
 	}
 	if (tl->now >= tl->running) {
-		/* nowがおかしな値になっていたら、修正する */
 		tl->now = 0;
 	}
-	task->flags = 1; /* スリープ中 */
+	task->flags = 1; 
 
-	/* ずらし */
 	for (; i < tl->running; i++) {
 		tl->tasks[i] = tl->tasks[i + 1];
 	}
@@ -54,10 +49,9 @@ void task_remove(struct TASK *task)
 void task_switchsub(void)
 {
 	int i;
-	/* 一番上のレベルを探す */
 	for (i = 0; i < MAX_TASKLEVELS; i++) {
 		if (taskctl->level[i].running > 0) {
-			break; /* 見つかった */
+			break; 
 		}
 	}
 	taskctl->now_lv = i;
@@ -92,11 +86,11 @@ struct TASK *task_init(struct MEMMAN *memman)
 	}
 
 	task = task_alloc();
-	task->flags = 2;	/* 動作中マーク */
+	task->flags = 2;	
 	task->priority = 2; /* 0.02秒 */
-	task->level = 0;	/* 最高レベル */
+	task->level = 0;	
 	task_add(task);
-	task_switchsub();	/* レベル設定 */
+	task_switchsub();	
 	load_tr(task->sel);
 	task_timer = timer_alloc();
 	timer_settime(task_timer, task->priority);
@@ -122,9 +116,9 @@ struct TASK *task_alloc(void)
 	for (i = 0; i < MAX_TASKS; i++) {
 		if (taskctl->tasks0[i].flags == 0) {
 			task = &taskctl->tasks0[i];
-			task->flags = 1; /* 使用中マーク */
+			task->flags = 1; 
 			task->tss.eflags = 0x00000202; /* IF = 1; */
-			task->tss.eax = 0; /* とりあえず0にしておくことにする */
+			task->tss.eax = 0; 
 			task->tss.ecx = 0;
 			task->tss.edx = 0;
 			task->tss.ebx = 0;
@@ -140,28 +134,27 @@ struct TASK *task_alloc(void)
 			return task;
 		}
 	}
-	return 0; /* もう全部使用中 */
+	return 0; 
 }
 
 void task_run(struct TASK *task, int level, int priority)
 {
 	if (level < 0) {
-		level = task->level; /* レベルを変更しない */
+		level = task->level;
 	}
 	if (priority > 0) {
 		task->priority = priority;
 	}
 
-	if (task->flags == 2 && task->level != level) { /* 動作中のレベルの変更 */
-		task_remove(task); /* これを実行するとflagsは1になるので下のifも実行される */
+	if (task->flags == 2 && task->level != level) { 
+		task_remove(task); 
 	}
 	if (task->flags != 2) {
-		/* スリープから起こされる場合 */
 		task->level = level;
 		task_add(task);
 	}
 
-	taskctl->lv_change = 1; /* 次回タスクスイッチのときにレベルを見直す */
+	taskctl->lv_change = 1;
 	return;
 }
 
@@ -169,13 +162,11 @@ void task_sleep(struct TASK *task)
 {
 	struct TASK *now_task;
 	if (task->flags == 2) {
-		/* 動作中だったら */
 		now_task = task_now();
-		task_remove(task); /* これを実行するとflagsは1になる */
+		task_remove(task); 
 		if (task == now_task) {
-			/* 自分自身のスリープだったので、タスクスイッチが必要 */
 			task_switchsub();
-			now_task = task_now(); /* 設定後での、「現在のタスク」を教えてもらう */
+			now_task = task_now(); 
 			farjmp(0, now_task->sel);
 		}
 	}

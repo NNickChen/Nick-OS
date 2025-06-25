@@ -2,7 +2,7 @@
 #include "apilib.h"
 #include <stdarg.h>
 
-int printf(char *format, ...)
+int printf(const char *format, ...)
 {
 	va_list ap;
 	char s[1000];

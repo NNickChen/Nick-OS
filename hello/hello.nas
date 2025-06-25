@@ -3,11 +3,11 @@
 [BITS 32]
 [FILE "hello5.nas"]
 
-		GLOBAL	_HariMain
+		GLOBAL	_NickStartup
 		
 [SECTION .text]
 
-_HariMain:
+_NickStartup:
 		MOV		EBX,msg
 		MOV		EDX,2
 		INT		0X40

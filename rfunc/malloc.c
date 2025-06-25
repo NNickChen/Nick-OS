@@ -2,11 +2,11 @@
 
 void *malloc(int size)
 {
-	char *p = api_malloc(size + 4);
+	char *p = api_malloc(size + 16);
 	
 	if(p != 0){
 		*((int *) p) = size;
-		p += 4;
+		p += 16;
 	}
 	return p;
 }

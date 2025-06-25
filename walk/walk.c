@@ -1,14 +1,14 @@
 #include <stdio.h>
 #include "apilib.h"
 
-void HariMain(void)
+void NickStartup(void)
 {
 	int win, x = 80, y = 50, i, *mx, *my;
 	char *buf;
 	
 	api_initmalloc();
 	buf = api_malloc(160 * 100);
-	win = api_openwin(buf, 160, 100, -1, "walk");
+	win = api_openwin(buf, 160, 100, -1, "walk", 0);
 	mx = (int *) api_malloc(1);
 	my = (int *) api_malloc(1);
 	api_txtbox(win, 8, 28, 144, 63, 0);

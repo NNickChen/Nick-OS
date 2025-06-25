@@ -9,7 +9,7 @@
 ---------------------------------------------------------------------------- 
 */
 
-void HariMain(void)
+void NickStartup(void)
 {
 	char cmdline[60], *p;
 	int max, langmode = api_getlang();; /* max:最大值 langmode:当前显示模式 */

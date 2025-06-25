@@ -1,10 +1,8 @@
-#include "apilib.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 void NickStartup(void)
 {
-	for(;;){
-		putchar('A');
-	}
+	printf("hello,world!");
 	api_end();
 }

@@ -11,22 +11,18 @@ default :
 	$(MAKE) nick.img
 	
 	
-nick.img : nick/nick.sys nick/ipl20.nas Makefile\
+nick.img : nick/nick.sys nick/ipl10.nas Makefile\
 	a/a.nck about/about.nck beepdown/beepdown.nck\
 	beepup/beepup.nck color/color.nck draw/draw.nck\
 	hello/hello.nck lines/lines.nck stars/stars.nck\
 	swatch/swatch.nck textbox/textbox.nck timer/timer.nck\
 	walk/walk.nck winhello/winhello.nck sosu/sosu.nck\
-	typeipl/typeipl.nck chinese/chinese.fnt\
-	welcome.txt
+	notrec/notrec.nck hello2/hello2.nck\
+	type++/type++.nck chinese/chinese.fnt
 	$(EDIMG)   imgin:../z_tools/fdimg0at.tek \
-		wbinimg src:nick/ipl20.bin len:512 from:0 to:0 \
+		wbinimg src:nick/ipl10.bin len:512 from:0 to:0 \
 		copy from:nick/nick.sys to:@: \
-		copy from:nick/english.txt to:@: \
-		copy from:nick/ipl20.nas to:@: \
-		copy from:welcome.txt to:@: \
-		copy from:apilib.h to:@:\
-		copy from:app_make.txt to:@:\
+		copy from:nick/ipl10.nas to:@: \
 		copy from:a/a.nck to:@: \
 		copy from:hello/hello.nck to:@: \
 		copy from:winhello/winhello.nck to:@:\
@@ -42,7 +38,9 @@ nick.img : nick/nick.sys nick/ipl20.nas Makefile\
 		copy from:color/color.nck to:@:\
 		copy from:textbox/textbox.nck to:@:\
 		copy from:sosu/sosu.nck to:@:\
-		copy from:typeipl/typeipl.nck to:@:\
+		copy from:notrec/notrec.nck to:@:\
+		copy from:hello2/hello2.nck to:@:\
+		copy from:type++/type++.nck to:@:\
 		copy from:chinese/chinese.fnt to:@:\
 		imgout:nick.img
 		
@@ -56,9 +54,9 @@ install :
 	copy nick.img J:\nick.img
 	
 full :
+	$(MAKE) -C rfunc
 	$(MAKE) -C nick
 	$(MAKE) -C apilib
-	$(MAKE) -C rfunc
 	$(MAKE) -C a
 	
 	$(MAKE) -C about
@@ -75,8 +73,10 @@ full :
 	$(MAKE) -C walk
 	$(MAKE) -C winhello
 	$(MAKE) -C sosu
-	$(MAKE) -C typeipl
 	$(MAKE) -C chinese
+	$(MAKE) -C notrec
+	$(MAKE) -C hello2
+	$(MAKE) -C type++
 	$(MAKE) nick.img
 	
 run_full :
@@ -118,7 +118,9 @@ clean_full :
 	$(MAKE) -C walk		clean
 	$(MAKE) -C winhello	clean
 	$(MAKE) -C sosu		clean
-	$(MAKE) -C typeipl	clean
+	$(MAKE) -C notrec	clean
+	$(MAKE) -C hello2	clean
+	$(MAKE) -C type++	clean
 	
 	
 src_only_full :
@@ -141,7 +143,9 @@ src_only_full :
 	$(MAKE) -C walk		src_only
 	$(MAKE) -C winhello	src_only
 	$(MAKE) -C sosu 	src_only
-	$(MAKE) -C typeipl	src_only
+	$(MAKE) -C notrec	src_only
+	$(MAKE) -C hello2	src_only
+	$(MAKE) -C type++	src_only
 	$(MAKE) -C chinese	src_only
 	-$(DEL) nick.img
 	

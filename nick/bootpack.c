@@ -6,14 +6,14 @@
 #define MAX_SHTINV 5
 
 
-void HariMain(void)
+void NickStartup(void)
 {
 	struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
 	struct FIFO32 fifo, keycmd;
 	struct SHTCTL *shtctl;
 	char s[40];
 	int fifobuf[128], keycmd_buf[32];
-	int mx, my, i, x, y, j, mmx = -1, mmy = -1, mmx2 = 0, show = 0, *fat;
+	int mx, my, i, x, y, j, mmx = -1, mmy = -1, mmx2 = 0, show = 0, *fat, new_mx = -1, new_my = 0, new_wx = 0x7fffffff, new_wy = 0;
 	extern char english[4096];
 	unsigned char *chinese;
 	struct FILEINFO *finfo;
@@ -170,8 +170,18 @@ void HariMain(void)
 		}
 		io_cli();
 		if (fifo32_status(&fifo) == 0) {
-			task_sleep(task_a);
-			io_sti();
+			if(new_mx >= 0){
+				io_sti();
+				sheet_slide(sht_mouse, new_mx, new_my);
+				new_mx = -1;
+			} else if(new_wx != 0x7fffffff){
+				io_sti();
+				sheet_slide(sht, new_wx, new_wy);
+				new_wx = 0x7fffffff;
+			} else {
+				task_sleep(task_a);
+				io_sti();
+			}
 		} else {
 			i = fifo32_get(&fifo);
 			io_sti();
@@ -209,19 +219,19 @@ void HariMain(void)
 				if(s[0] != 0 && key_win != 0){
 					fifo32_put(&key_win->task->fifo, s[0] + 256);
 				}					   
-				if (i == 256 + 0x48){	/* ú¾ß¾ï©?*/
+				if (i == 256 + 0x48){	/* ÏòÉÏ¼ü */
 					fifo32_put(&key_win->task->fifo, 256 + 255);
 				}
-				if (i == 256 + 0x50){	/* ú¾ù»ï©?*/
+				if (i == 256 + 0x50){	/* ÏòÏÂ¼ü*/
 					fifo32_put(&key_win->task->fifo, 256 + 254);
 				}
-				if (i == 256 + 0x4b){	/* ú¾ñ§ï©?*/
+				if (i == 256 + 0x4b){	/* Ïò×ó¼ü*/
 					fifo32_put(&key_win->task->fifo, 256 + 253);
 				}
-				if (i == 256 + 0x4d){	/* ú¾éÓï©?*/
+				if (i == 256 + 0x4d){	/* ÏòÓÒ¼ü*/
 					fifo32_put(&key_win->task->fifo, 256 + 252);
 				}
-				if (i == 256 + 0x01){
+				if (i == 256 + 0x01){	/* Esc */
 					fifo32_put(&key_win->task->fifo, 256 + 251);
 				}
 				if (i == 256 + 0x0f && key_win != 0) { /* Tab */
@@ -345,26 +355,15 @@ void HariMain(void)
 						sprintf(s, "(%3d, %3d)", mx, my);
 						putfonts8_asc_sht(sht_back, 0, 0, COL8_FFFFFF, get_bc(buf_back), s, 10);
 					}
-					if (mx < 0) {
-						mx = 0;
-					}
-					if (my < 0) {
-						my = 0;
-					}
-					if (mx > binfo->scrnx - 1) {
-						mx = binfo->scrnx - 1;
-					}
-					if (my > binfo->scrny - 1) {
-						my = binfo->scrny - 1;
-					}
-					sheet_slide(sht_mouse, mx, my);
+					new_mx = mx;
+					new_my = my;
 					if ((mdec.btn & 0x01) != 0) {
 						if(mmx < 0){
 							for(j = shtctl->top - 1; j > 0; j--){
 								sht = shtctl->sheets[j];
 								x = mx - sht->vx0;
 								y = my - sht->vy0;
-								if(0 <= x && x < sht->bxsize && 0 <= y && y < sht->bysize){
+								if(0 <= x && x < sht->bxsize && 0 <= y && y < sht->bysize && sht->buf[x + y * sht->bxsize] != sht->col_inv){
 									if(sht != key_win){
 										sheet_updown(sht, shtctl->top - 1);
 										keywin_off(key_win);
@@ -375,7 +374,8 @@ void HariMain(void)
 										mmx = mx;
 										mmy = my;
 										mmx2 = sht->vx0;
-										if(sht->bxsize - 21 <= x && x <= sht->bxsize - 5 && 5 <= y && y<= 19){
+										new_wy = sht->vy0;
+										if(sht->bxsize - 21 <= x && x <= sht->bxsize - 5 && 5 <= y && y<= 19 && sht->col_inv <= 0){
 											if((sht->flags & 0x10) != 0){
 												task = sht->task;
 												io_cli();
@@ -404,7 +404,8 @@ void HariMain(void)
 						} else {
 							x = mx - mmx;
 							y = my - mmy;
-							sheet_slide(sht, (mmx2 + x + 2) & ~3, sht->vy0 + y);
+							new_wx = (mmx2 + x + 2) & ~3;
+							new_wy = new_wy + y;
 							mmy = my;
 						}
 						if((key_win->flags & 0x10) != 0){
@@ -415,6 +416,10 @@ void HariMain(void)
 						}
 					} else {
 						mmx = -1;
+						if(new_wx != 0x7fffffff){
+							sheet_slide(sht, new_wx, new_wy);
+							new_wx = 0x7fffffff;
+						}
 					}
 				}
 			} else if (768 <= i && i <= 1023) {
@@ -433,7 +438,9 @@ void HariMain(void)
 
 void keywin_on(struct SHEET *key_win)
 {
-	change_wtitle8(key_win, 1);
+	if(key_win->flags2 == 0){
+		change_wtitle8(key_win, 1);
+	}
 	sheet_refresh(key_win, 0, 0, key_win->bxsize, 25);
 	if((key_win->flags & 0x20) != 0){
 		fifo32_put(&key_win->task->fifo, 2);
@@ -443,7 +450,9 @@ void keywin_on(struct SHEET *key_win)
 
 void keywin_off(struct SHEET *key_win)
 {
-	change_wtitle8(key_win, 0);
+	if(key_win->flags2 == 0){
+		change_wtitle8(key_win, 0);
+	}
 	sheet_refresh(key_win, 0, 0, key_win->bxsize, 25);
 	if((key_win->flags & 0x20) != 0){
 		fifo32_put(&key_win->task->fifo, 3);

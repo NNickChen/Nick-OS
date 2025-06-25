@@ -22,6 +22,7 @@
 		GLOBAL  _asm_api
 		GLOBAL  _start_app, _end_app
 		GLOBAL	_shutdown, _shutdown2
+		GLOBAL	_read_reg_ecx
 		EXTERN	_inthandler20, _inthandler21
 		EXTERN	_inthandler27, _inthandler2c
 		EXTERN  _inthandler0d, _inthandler0c
@@ -490,4 +491,3 @@ start2:
 	LIDT	[0x0620]
 	JMP		2*8:0x0630
 	
-

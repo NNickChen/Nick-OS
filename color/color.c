@@ -1,7 +1,7 @@
 #include "apilib.h"
 unsigned char rgb2pal(int r, int g, int b, int x, int y);
 
-void HariMain(void)
+void NickStartup(void)
 {
 	int win, x, y, r, g, b;
 	char *buf;
@@ -9,9 +9,9 @@ void HariMain(void)
 	api_initmalloc();
 	buf = api_malloc(144 * 164);
 	if(api_getlang() == 0){
-		win = api_openwin(buf, 144, 164, -1, "color");
+		win = api_openwin(buf, 144, 164, -1, "color", 0);
 	} else {
-		win = api_openwin(buf, 144, 164, -1, "五颜六色");
+		win = api_openwin(buf, 144, 164, -1, "五颜六色", 0);
 	}
 	
 	for(y = 0; y < 128; y++){

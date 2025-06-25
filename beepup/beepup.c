@@ -1,6 +1,6 @@
 #include "apilib.h"
 
-void HariMain(void)
+void NickStartup(void)
 {
 	int timer, i;
 	timer = api_alloctimer();
@@ -13,6 +13,5 @@ void HariMain(void)
 		}
 	}
 	api_beep(0);
-	api_end();
+	api_end();	
 }
-	

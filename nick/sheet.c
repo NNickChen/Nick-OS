@@ -1,5 +1,3 @@
-
-
 #include "bootpack.h"
 
 
@@ -36,6 +34,7 @@ struct SHEET *sheet_alloc(struct SHTCTL *ctl)
 		if (ctl->sheets0[i].flags == 0) {
 			sht = &ctl->sheets0[i];
 			sht->flags = SHEET_USE;
+			sht->flags2 = 0;
 			sht->height = -1; 
 			sht->task = 0;
 			return sht;
@@ -74,7 +73,7 @@ void sheet_refreshmap(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1, in
 		if (by0 < 0) { by0 = 0; }
 		if (bx1 > sht->bxsize) { bx1 = sht->bxsize; }
 		if (by1 > sht->bysize) { by1 = sht->bysize; }
-		if (sht->col_inv == -1) {
+		if (sht->col_inv <= 0) {
 			if ((sht->vx0 & 3) == 0 && (bx0 & 3) == 0 && (bx1 & 3) == 0) {
 				bx1 = (bx1 - bx0) / 4; 
 				sid4 = sid | sid << 8 | sid << 16 | sid << 24;
@@ -248,6 +247,9 @@ void sheet_updown(struct SHEET *sht, int height)
 void sheet_refresh(struct SHEET *sht, int bx0, int by0, int bx1, int by1)
 {
 	if (sht->height >= 0) { 
+		if(sht->col_inv >= 0){
+			sheet_slide(sht, sht->vx0, sht->vy0);
+		}
 		sheet_refreshsub(sht->ctl, sht->vx0 + bx0, sht->vy0 + by0, sht->vx0 + bx1, sht->vy0 + by1, sht->height, sht->height);
 	}
 	return;

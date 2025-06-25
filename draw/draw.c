@@ -1,16 +1,17 @@
 #include "apilib.h"
+#include <stdlib.h>
 
-void HariMain(void)
+void NickStartup(void)
 {
 	char *buf;
-	int win, i, *mx, *my, langmode = api_getlang();
+	int win, *mx, *my, langmode = api_getlang();
 	
 	api_initmalloc();
-	buf = api_malloc(200 * 200);
+	buf = malloc(200 * 200);
 	if(langmode == 0){
-		win = api_openwin(buf, 200, 200, -1, "draw");
+		win = api_openwin(buf, 200, 200, -1, "draw", 0);
 	} else {
-		win = api_openwin(buf, 200, 200, -1, "»­Í¼");
+		win = api_openwin(buf, 200, 200, -1, "»­Í¼", 0);
 	}
 	mx = (int *) api_malloc(1);
 	my = (int *) api_malloc(1);

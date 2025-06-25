@@ -1,6 +1,7 @@
 #include "apilib.h"
+#include <stdlib.h>
 
-void HariMain(void)
+void NickStartup(void)
 {
 	int win, i;
 	char *buf;
@@ -8,9 +9,9 @@ void HariMain(void)
 	api_initmalloc();
 	buf = api_malloc(160 * 100);
 	if(api_getlang() == 0){
-		win = api_openwin(buf, 160, 100, -1, "lines");
+		win = api_openwin(buf, 160, 100, -1, "lines", 0);
 	} else {
-		win = api_openwin(buf, 160, 100, -1, "线条");
+		win = api_openwin(buf, 160, 100, -1, "线条", 0);
 	}
 	for(i = 0; i < 8; i ++){
 		api_linewin(win + 1, 8, 26, 77, i * 9 + 26, i);
@@ -25,5 +26,5 @@ void HariMain(void)
 		}
 	}
 	api_closewin(win);
-	api_end();
+	exit(1);
 }

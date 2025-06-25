@@ -2,7 +2,7 @@
 #include "apilib.h"
 
 
-void HariMain(void)
+void NickStartup(void)
 {
 	int timer, i;
 	timer = api_alloctimer();

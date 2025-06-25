@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "apilib.h"
 
-void HariMain(void)
+void NickStartup(void)
 {
 	char *buf, s[8];
 	int win, timer, i, key_to = 0;
@@ -10,9 +10,9 @@ void HariMain(void)
 	api_initmalloc();
 	buf = api_malloc(150 * 50);
 	if(api_getlang == 0){
-		win = api_openwin(buf, 150, 50, -1, "timer");
+		win = api_openwin(buf, 150, 50, -1, "timer", 0);
 	} else {
-		win = api_openwin(buf, 150, 50, -1, "计时器");
+		win = api_openwin(buf, 150, 50, -1, "计时器", 0);
 	}
 
 go:	

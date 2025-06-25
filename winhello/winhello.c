@@ -1,13 +1,13 @@
 #include "apilib.h"
 #include <stdlib.h>
 
-void HariMain(void)
+void NickStartup(void)
 {
 	int win;
-	char *buf;
+	char buf[144 * 52];
 	
-	buf = malloc(150 * 50);
-	win = api_openwin(buf, 150, 50, -1, "hello");
+	
+	win = api_openwin(buf, 144, 52, -1, "hello", 0);
 	api_boxfilwin(win, 8, 36, 141, 43, 3);
 	api_putstrwin(win, 28, 28, 0, 12, "hello,world!");
 	for(;;){

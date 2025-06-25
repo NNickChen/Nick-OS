@@ -1,6 +1,6 @@
 #include "apilib.h"
 
-void HariMain(void)
+void NickStartup(void)
 {
 	int win, timer, cursor_c = 7, cursor_x = 8, i;
 	char *buf, s[2];
@@ -8,9 +8,9 @@ void HariMain(void)
 	api_initmalloc();
 	buf = api_malloc(144 * 52);
 	if(api_getlang() == 0){
-		win = api_openwin(buf, 144, 52, -1, "textbox");
+		win = api_openwin(buf, 144, 52, -1, "textbox", 0);
 	} else {
-		win = api_openwin(buf, 144, 52, -1, "文本输入框");
+		win = api_openwin(buf, 144, 52, -1, "文本输入框", 0);
 	}
 	api_txtbox(win, 8, 28, 128, 16, 7);
 	

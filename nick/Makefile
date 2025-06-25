@@ -1,6 +1,6 @@
 OBJS_BOOTPACK = bootpack.obj naskfunc.obj english.obj graphic.obj dsctbl.obj \
 		int.obj fifo.obj keyboard.obj mouse.obj memory.obj sheet.obj timer.obj \
-		mtask.obj cmos.obj console.obj window.obj file.obj tek.obj
+		mtask.obj cmos.obj console.obj api.obj cmd.obj window.obj file.obj tek.obj
 		
 TOOLPATH = ../../z_tools/
 INCPATH  = ../../z_tools/nick/
@@ -18,11 +18,11 @@ COPY     = copy
 DEL      = del
 
 default :
-	$(MAKE) ipl20.bin
+	$(MAKE) ipl10.bin
 	$(MAKE) nick.sys
 
-ipl20.bin : ipl20.nas Makefile
-	$(NASK) ipl20.nas ipl20.bin ipl20.lst
+ipl10.bin : ipl10.nas Makefile
+	$(NASK) ipl10.nas ipl10.bin ipl10.lst
 	
 
 asmhead.bin : asmhead.nas Makefile
@@ -68,5 +68,5 @@ clean :
 src_only :
 	$(MAKE) clean
 	-$(DEL) nick.sys
-	-$(DEL) ipl20.bin
+	-$(DEL) ipl10.bin
 	

@@ -1,11 +1,11 @@
 /* asmhead.nas */
 struct BOOTINFO { /* 0x0ff0-0x0fff */
-	char cyls; /* ?入的柱面数*/
-	char leds; /* LED的状? */
-	char vmode; /* 画面模式 */
+	char cyls; /* ??????????????? */
+	char leds; /* LED????*/
+	char vmode; /* ??????  */
 	char reserve;
-	short scrnx, scrny; /* 分辨率 */
-	char *vram;
+	short scrnx, scrny; /* ????? */
+	char *vram; /*??????? */
 	int vb;
 };
 #define ADR_BOOTINFO	0x00000ff0
@@ -43,6 +43,7 @@ void asm_inthandler00(void);
 void end_app(void);
 void shutdown(void);
 void shutdown2(void);
+int read_reg_ecx(void);
 
 /* fifo.c */
 struct FIFO32 {
@@ -113,6 +114,9 @@ void set_gatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 /* int.c */
 void init_pic(void);
 void inthandler27(int *esp);
+int *inthandler0d(int *esp);
+int *inthandler0c(int *esp);
+int *inthandler00(int *esp);
 #define PIC0_ICW1		0x0020
 #define PIC0_OCW2		0x0020
 #define PIC0_IMR		0x0021
@@ -165,7 +169,8 @@ int memman_free_4k(struct MEMMAN *man, unsigned int addr, unsigned int size);
 #define SHEET_USE		1
 struct SHEET {
 	unsigned char *buf;
-	int bxsize, bysize, vx0, vy0, col_inv, height, flags;
+	int bxsize, bysize, vx0, vy0, col_inv, height;
+	int flags, flags2;
 	struct SHTCTL *ctl;
 	struct TASK *task;
 	char *title;
@@ -254,27 +259,27 @@ void task_run(struct TASK *task, int level, int priority);
 void task_switch(void);
 void task_sleep(struct TASK *task);
 
-/**CMOS操作端口**/
+/* cmos.c */
 #define cmos_index 0x70
 #define cmos_data 0x71
-/**CMOS中相?信息偏移*/
-#define CMOS_CUR_SEC	0x0			//CMOS中当前秒?(BCD)
-#define CMOS_ALA_SEC	0x1			//CMOS中?警秒?(BCD)
-#define CMOS_CUR_MIN	0x2			//CMOS中当前分?(BCD)
-#define CMOS_ALA_MIN	0x3			//CMOS中?警分?(BCD)
-#define CMOS_CUR_HOUR	0x4			//CMOS中当前小?(BCD)
-#define CMOS_ALA_HOUR	0x5			//CMOS中?警小?(BCD)
-#define CMOS_WEEK_DAY	0x6			//CMOS中一周中当前天(BCD)
-#define CMOS_MON_DAY	0x7			//CMOS中一月中当前日(BCD)
-#define CMOS_CUR_MON	0x8			//CMOS中当前月?(BCD)
-#define CMOS_CUR_YEAR	0x9			//CMOS中当前年?(BCD)
-#define CMOS_DEV_TYPE	0x12		//CMOS中??器格式
-#define CMOS_CUR_CEN	0x32		//CMOS中当前世?(BCD)
 
-#define BCD_HEX(n)	((n >> 4) * 10) + (n & 0xf)  //BCD?十六?制
+#define CMOS_CUR_SEC	0x0			
+#define CMOS_ALA_SEC	0x1		
+#define CMOS_CUR_MIN	0x2			
+#define CMOS_ALA_MIN	0x3			
+#define CMOS_CUR_HOUR	0x4			
+#define CMOS_ALA_HOUR	0x5			
+#define CMOS_WEEK_DAY	0x6			
+#define CMOS_MON_DAY	0x7			
+#define CMOS_CUR_MON	0x8			
+#define CMOS_CUR_YEAR	0x9			
+#define CMOS_DEV_TYPE	0x12		
+#define CMOS_CUR_CEN	0x32		
 
-#define BCD_ASCII_first(n)	(((n<<4)>>4)+0x30)  //取BCD的个位并以字符?出,来自UdoOS
-#define BCD_ASCII_S(n)	((n<<4)+0x30)  //取BCD的十位并以字符?出,来自UdoOS
+#define BCD_HEX(n)	((n >> 4) * 10) + (n & 0xf)  
+
+#define BCD_ASCII_first(n)	(((n<<4)>>4)+0x30)  
+#define BCD_ASCII_S(n)	((n<<4)+0x30)  
 #define ADR_TIME 0x0f20
 struct TIME {
 	unsigned int year, mon, date;
@@ -313,15 +318,16 @@ void cons_newline(struct CONSOLE *cons);
 void cons_putchar(struct CONSOLE *cons, int chr, char move);
 void cons_putstr0(struct CONSOLE *cons, char *s);
 void cons_putstr1(struct CONSOLE *cons, char *s, int l);
-int *inthandler0d(int *esp);
-int *inthandler0c(int *esp);
-int *inthandler00(int *esp);
+
+/* api.c */
 struct MOUSE {
 	int x, y;
 	int phase;
 };
 int *api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
 void linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col);
+
+/* cmd.c */
 void cmd(struct CONSOLE *cons, unsigned int memtotal, int *fat, char *cmdline);
 void cmd_mem(struct CONSOLE *cons, unsigned int memtotal);
 void cmd_cls(struct CONSOLE *cons);

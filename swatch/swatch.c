@@ -1,7 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "apilib.h"
 
-void HariMain(void)
+void NickStartup(void)
 {
 	char *buf, s[12];
 	int win, timer, sec = 0, min = 0, hou = 0, i, langmode = api_getlang();
@@ -9,9 +10,9 @@ void HariMain(void)
 	api_initmalloc();
 	buf = api_malloc(150 * 50);
 	if(langmode == 0){
-		win = api_openwin(buf, 150, 50, -1, "stop watch");
+		win = api_openwin(buf, 150, 50, -1, "stop watch", 0);
 	} else {
-		win = api_openwin(buf, 150, 50, -1, "√Î±Ì");
+		win = api_openwin(buf, 150, 50, -1, "√Î±Ì", 0);
 	}
 	timer = api_alloctimer();
 	api_inittimer(timer, 128);
@@ -47,5 +48,5 @@ void HariMain(void)
 			break;
 		}
 	}
-	api_end();
+	exit(1);
 }

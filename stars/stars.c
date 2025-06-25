@@ -1,8 +1,7 @@
 #include "apilib.h"
+#include <stdlib.h>
 
-int rand(void);
-
-void HariMain(void)
+void NickStartup(void)
 {
 	char *buf;
 	int win, i, x, y, langmode = api_getlang();;
@@ -10,11 +9,11 @@ void HariMain(void)
 	api_initmalloc();
 	buf = api_malloc(150 * 100);
 	if(langmode == 0){
-		win = api_openwin(buf, 150, 100, -1, "stars");
+		win = api_openwin(buf, 150, 100, -1, "stars", 0);
 	} else {
-		win = api_openwin(buf, 150, 100, -1, "ÐÇ¿Õ");
+		win = api_openwin(buf, 150, 100, -1, "ÐÇ¿Õ", 0);
 	}
-	api_boxfilwin(win + 1, 6, 26, 143, 93, 0);
+	api_txtbox(win, 8, 28, 134, 63, 0);
 	for(i = 0; i < 50; i++){
 		x = (rand() % 137) + 6;
 		y = (rand() % 67) + 26;
