@@ -1,4 +1,4 @@
-Nick OS [version 0.0.2]
+Nick OS [version 0.0.3]
 (c) 2017 Nick
                  
 Welcome to Nick OS!

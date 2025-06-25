@@ -6,7 +6,6 @@
 
 
 
-
 void HariMain(void)
 {
 	struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
@@ -37,8 +36,9 @@ void HariMain(void)
 	unsigned char *buf_back, buf_mouse[256], *buf_win, *buf_cons;
 	struct SHEET *sht_back, *sht_mouse, *sht_win, *sht_cons;
 	struct TASK *task_a, *task_cons;
-	struct TIMER *timer, *start_timer, *block_timer;
-	int key_to = 0, key_shift = 0, key_leds = (binfo->leds >> 4) & 7, keycmd_wait = -1, x;
+	struct TIMER *timer;
+	struct CONSOLE *cons;
+	int key_to = 0, key_shift = 0, key_leds = (binfo->leds >> 4) & 7, keycmd_wait = -1;
 	fifo32_init(&keycmd, 32, keycmd_buf, 0);
 
 	init_gdtidt();
@@ -57,7 +57,7 @@ void HariMain(void)
 	memman_free(memman, 0x00400000, memtotal - 0x00400000);
 
 	init_palette();
-	if (binfo->vb != 0x0000){
+	/* if (binfo->vb != 0x0000){
 		start_timer = timer_alloc();
 		timer_init(start_timer, &fifo, 10);
 		timer_settime(start_timer, 500);
@@ -87,8 +87,9 @@ void HariMain(void)
 				}
 			}
 		}
-	}
+	} */
 	shtctl = shtctl_init(memman, binfo->vram, binfo->scrnx, binfo->scrny);
+	*((int *) 0xfe4) = (int) shtctl;
 	task_a = task_init(memman);
 	fifo.task = task_a;
 	task_run(task_a, 1, 2);
@@ -260,6 +261,14 @@ void HariMain(void)
 						fifo32_put(&task_cons->fifo, 10 + 256);
 					}
 				}
+				if (i == 256 + 0x01 && key_shift != 0 && key_to == 1 && task_cons->tss.ss0 != 0){
+					cons = (struct CONSOLE *) *((int *) 0x0fec);
+					cons_putstr0(cons, "\nBreak(key)\n");
+					io_cli();
+					task_cons->tss.eax = (int) &(task_cons->tss.esp0);
+					task_cons->tss.eip = (int) end_app;
+					io_cli();
+				}
 				if(cursor_c >= 0){
 					boxfill8(sht_win->buf, sht_win->bxsize, cursor_c, cursor_x, 28, cursor_x + 1, 43);
 				}
@@ -282,7 +291,14 @@ void HariMain(void)
 					}
 					sheet_slide(sht_mouse, mx, my);
 					if ((mdec.btn & 0x01) != 0) {
-						sheet_slide(sht_win, mx - 80, my - 8);
+						if(key_to == 0){
+							sheet_slide(sht_win, mx - 80, my - 8);
+						} else {
+							fifo32_put(&task_cons->fifo, 13);
+							fifo32_put(&task_cons->fifo, mx + 512);
+							fifo32_put(&task_cons->fifo, 14);
+							fifo32_put(&task_cons->fifo, my + 512);
+						}
 					}
 				}
 			} else if (i <= 1) { 

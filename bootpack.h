@@ -11,11 +11,13 @@ struct BOOTINFO { /* 0x0ff0-0x0fff */
 #define ADR_BOOTINFO	0x00000ff0
 #define ADR_DISKIMG     0x00100000
 
+
 /* naskfunc.nas */
 void io_hlt(void);
 void io_cli(void);
 void io_sti(void);
 void io_stihlt(void);
+void io_nop(void);
 int io_in8(int port);
 void io_out8(int port, int data);
 int io_load_eflags(void);
@@ -31,6 +33,13 @@ void asm_inthandler27(void);
 void asm_inthandler2c(void);
 unsigned int memtest_sub(unsigned int start, unsigned int end);
 void farjmp(int eip, int cs);
+void farcall(int eip, int cs);
+void asm_api(void);
+void start_app(int eip, int cs, int esp, int ds, int *tss_esp0);
+void asm_inthandler0d(void);
+void asm_inthandler0c(void);
+void asm_inthandler00(void);
+void end_app(void);
 
 /* fifo.c */
 struct FIFO32 {
@@ -151,6 +160,7 @@ struct SHEET {
 	unsigned char *buf;
 	int bxsize, bysize, vx0, vy0, col_inv, height, flags;
 	struct SHTCTL *ctl;
+	char *title;
 };
 struct SHTCTL {
 	unsigned char *vram, *map;
@@ -260,8 +270,19 @@ void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c);
 void make_wtitle8(unsigned char *buf, int xsize, char *title, char act);
 
 /* console.c */
-int cons_newline(int cursor_y, struct SHEET *sheet);
+struct CONSOLE {
+	struct SHEET *sht;
+	int cursor_x, cursor_y, cursor_c;
+	struct TIMER *timer;
+};
 void console_task(struct SHEET *sheet, unsigned int memtotal);
+int *api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
+void cons_putchar(struct CONSOLE *cons, int chr, char move);
+void cons_putstr0(struct CONSOLE *cons, char *s);
+void cons_putstr1(struct CONSOLE *cons, char *s, int l);
+int *inthandler0d(int *esp);
+int *inthandler0c(int *esp);
+int *inthandler00(int *esp);
 
 /* file.c */
 struct FILEINFO {
@@ -270,5 +291,10 @@ struct FILEINFO {
 	unsigned short time, date, clustno;
 	unsigned int size;
 };
+
 void file_readfat(int *fat, unsigned char *img);
 void file_load(int clustno, int size, char *buf, int *fat, char *img);
+struct FILEINFO *file_search(char *name, struct FILEINFO *finfo, int max);
+
+/* operation.c */
+unsigned int involution(unsigned int base, unsigned int exponent);

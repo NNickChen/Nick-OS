@@ -1,12 +1,12 @@
 ; naskfunc
 ; TAB=4
 
-[FORMAT "WCOFF"]				; オブジェクトファイルを作るモード	
-[INSTRSET "i486p"]				; 486の命令まで使いたいという記述
-[BITS 32]						; 32ビットモード用の機械語を作らせる
-[FILE "naskfunc.nas"]			; ソースファイル名情報
+[FORMAT "WCOFF"]				
+[INSTRSET "i486p"]				
+[BITS 32]						
+[FILE "naskfunc.nas"]			
 
-		GLOBAL	_io_hlt, _io_cli, _io_sti, _io_stihlt
+		GLOBAL	_io_hlt, _io_cli, _io_sti, _io_stihlt, _io_nop
 		GLOBAL	_io_in8,  _io_in16,  _io_in32
 		GLOBAL	_io_out8, _io_out16, _io_out32
 		GLOBAL	_io_load_eflags, _io_store_eflags
@@ -15,10 +15,17 @@
 		GLOBAL	_load_tr
 		GLOBAL	_asm_inthandler20, _asm_inthandler21
 		GLOBAL	_asm_inthandler27, _asm_inthandler2c
+		GLOBAL  _asm_inthandler0d, _asm_inthandler0c
+		GLOBAL	_asm_inthandler00
 		GLOBAL	_memtest_sub
-		GLOBAL	_farjmp
+		GLOBAL	_farjmp, _farcall
+		GLOBAL  _asm_api
+		GLOBAL  _start_app, _end_app
 		EXTERN	_inthandler20, _inthandler21
 		EXTERN	_inthandler27, _inthandler2c
+		EXTERN  _inthandler0d, _inthandler0c
+		EXTERN	_inthandler00
+		EXTERN  _api
 
 [SECTION .text]
 
@@ -38,7 +45,10 @@ _io_stihlt:	; void io_stihlt(void);
 		STI
 		HLT
 		RET
-
+_io_nop:
+		NOP
+		RET
+		
 _io_in8:	; int io_in8(int port);
 		MOV		EDX,[ESP+4]		; port
 		MOV		EAX,0
@@ -211,5 +221,110 @@ _farjmp:		; void farjmp(int eip, int cs);
 		JMP		FAR	[ESP+4]				; eip, cs
 		RET
 
+_asm_api:
+		STI
+		PUSH	DS
+		PUSH	ES
+		PUSHAD
+		PUSHAD
+		MOV 	AX, SS
+		MOV		DS, AX
+		MOV 	ES, AX
+		CALL 	_api
+		CMP 	EAX, 0
+		JNE		_end_app
+		ADD		ESP, 32
+		POPAD
+		POP 	ES
+		POP		DS
+		IRETD
+		
+_end_app:
+		MOV		ESP, [EAX]
+		MOV		DWORD[EAX+4],0
+		POPAD
+		RET
+		
+_farcall:
+		CALL	FAR [ESP + 4]
+		RET
+		
+_start_app:		; void start_app(int eip, int cs, int esp, int ds, int *tss_esp0);
+		PUSHAD
+		MOV		EAX,[ESP+36]
+		MOV		ECX,[ESP+40]
+		MOV		EDX,[ESP+44]
+		MOV		EBX,[ESP+48]
+		MOV		EBP,[ESP+52]
+		MOV		[EBP],ESP
+		MOV		[EBP+4],SS
+		MOV		ES,BX
+		MOV		DS,BX
+		MOV		FS,BX
+		MOV		GS,BX
+		OR		ECX,3
+		OR		EBX,3
+		PUSH	EBX
+		PUSH	EDX
+		PUSH	ECX
+		PUSH	EAX
+		RETF
+		
+		
 
-
+_asm_inthandler0d:
+		PUSH	ES
+		PUSH	DS
+		PUSHAD
+		MOV		EAX,ESP
+		PUSH	EAX
+		MOV		AX,SS
+		MOV		DS,AX
+		MOV		ES,AX
+		CALL	_inthandler0d
+		CMP		EAX,0
+		JNE		_end_app
+		POP		EAX
+		POPAD
+		POP		DS
+		POP		ES
+		ADD		ESP,4
+		IRETD
+		
+_asm_inthandler0c:
+		PUSH	ES
+		PUSH	DS
+		PUSHAD
+		MOV		EAX,ESP
+		PUSH	EAX
+		MOV		AX,SS
+		MOV		DS,AX
+		MOV		ES,AX
+		CALL	_inthandler0c
+		CMP		EAX,0
+		JNE		_end_app
+		POP		EAX
+		POPAD
+		POP		DS
+		POP		ES
+		ADD		ESP,4
+		IRETD
+		
+_asm_inthandler00:
+		PUSH	ES
+		PUSH	DS
+		PUSHAD
+		MOV		EAX,ESP
+		PUSH	EAX
+		MOV		AX,SS
+		MOV		DS,AX
+		MOV		ES,AX
+		CALL	_inthandler00
+		CMP		EAX,0
+		JNE		_end_app
+		POP		EAX
+		POPAD
+		POP		DS
+		POP		ES
+		ADD		ESP,4
+		IRETD
