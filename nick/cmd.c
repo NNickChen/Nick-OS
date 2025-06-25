@@ -32,7 +32,7 @@ void cmd(struct CONSOLE *cons, unsigned int memtotal, int *fat, char *cmdline)
 		shutdown2();
 	} else if (strcmp(cmdline, "getlang") == 0){
 		cmd_getlang(cons);
-	} else if (cmdline[0] != 0){		
+	} else if (cmdline[0] != 0 && cmdline[0]!=' '){		
 		if(cmd_run(cons, cmdline, fat) == 0){
 			if(task->langmode == 0){
 				cons_putstr0(cons, "Bad command.\n\n");
@@ -117,7 +117,7 @@ void cmd_type(struct CONSOLE *cons, int *fat, char *cmdline)
 
 	if(finfo != 0){
 		p = file_load2(finfo->clustno, &size, fat);
-		for (i = 0; i < size; i++){
+		for (i = 0; i < finfo->size; i++){
 			cons_putchar(cons, p[i], 1);					
 		}	
 		memman_free_4k(memman, (int) p, finfo->size);
@@ -192,13 +192,9 @@ void cmd_start(struct CONSOLE *cons, char *cmdline, int memtotal)
 	struct SHTCTL *shtctl = (struct SHTCTL *) *((int *) 0xfe4);
 	struct SHEET *sht = open_console(shtctl, memtotal);
 	struct FIFO32 *fifo = &sht->task->fifo;
-	struct SHEET **key_win = (struct SHEET **) *((int *) 0xfe0);
 	int i;
 	sheet_slide(sht, 32, 4);
 	sheet_updown(sht, shtctl->top);
-	keywin_off(*key_win);
-	*key_win = sht;
-	keywin_on(*key_win);
 	for(i = 6; cmdline[i] != 0; i++){
 		fifo32_put(fifo, cmdline[i] + 256);
 	}

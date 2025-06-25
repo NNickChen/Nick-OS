@@ -3,13 +3,9 @@
 
 [INSTRSET "i486p"]
 
-VBEMODE	EQU		0x105		; 1024 x  768 x 8bitカラー
-; （画面モード一覧）
-;	0x100 :  640 x  400 x 8bitカラー
-;	0x101 :  640 x  480 x 8bitカラー
-;	0x103 :  800 x  600 x 8bitカラー
-;	0x105 : 1024 x  768 x 8bitカラー
-;	0x107 : 1280 x 1024 x 8bitカラー
+VBEMODE	EQU		0x105		
+VBN     EQU     0x0000
+
 
 BOTPAK	EQU		0x00280000		
 DSKCAC	EQU		0x00100000		
@@ -21,7 +17,8 @@ LEDS	EQU		0x0ff1
 VMODE	EQU		0x0ff2			
 SCRNX	EQU		0x0ff4			
 SCRNY	EQU		0x0ff6			
-VRAM	EQU		0x0ff8					
+VRAM	EQU		0x0ff8			
+VB      EQU     0x0ffc			
 		ORG		0xc200			
 
 
@@ -87,6 +84,7 @@ keystatus:
 		INT		0x16 			; keyboard BIOS
 		MOV		[LEDS],AL
 
+		MOV     DWORD [VB], VBN
 
 
 		MOV		AL,0xff

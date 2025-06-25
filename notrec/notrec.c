@@ -4,9 +4,10 @@
 void NickStartup(void)
 {
 	int win;
-	char buf[130 * 180];
+	char *buf;
 	
 	api_initmalloc();
+	buf = malloc(130 * 180);
 	if(api_getlang() == 0){
 		win = api_openwin(buf, 130, 180, 255, "notrec", 1);
 	} else {

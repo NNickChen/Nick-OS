@@ -13,7 +13,6 @@ int *api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax)
 	struct FILEHANDLE *fh;
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 	mouse->phase = 0;
-	int x, y, btn;
 	int *reg = &eax + 1;
 	/* reg[0] : EDI,   reg[1] : ESI,   reg[2] : EBP,   reg[3] : ESP */
 	/* reg[4] : EBX,   reg[5] : EDX,   reg[6] : ECX,   reg[7] : EAX */
@@ -116,17 +115,73 @@ int *api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax)
 				cons->sht = 0;
 				io_sti();
 			}
-			if(i >= 256){
+			if(i >= 256 && i <= 511){
 				reg[7] = i - 256;
 				return 0;
 			}
 		}
 	} else if(edx == 17){
 		sht = (struct SHEET *) ebx;
-		x = *((int *) 0xfdc);
-		x -= sht->vx0;
-		if(x >= 0 && x <= sht->bxsize){
-			reg[7] = x;
+		for(;;){
+			io_cli();
+			if(fifo32_status(&task->fifo) == 0){
+				if(eax != 0){
+					task_sleep(task);
+				} else {
+					io_sti();
+					reg[7] = -1;
+					return 0;
+				}
+			}
+			i = fifo32_get(&task->fifo);
+			io_sti();
+			if(i <= 1){
+				timer_init(cons->timer, &task->fifo, 1);
+				timer_settime(cons->timer, 50);
+			}
+			if(i == 2){
+				cons->cursor_c = COL8_FFFFFF;
+			} 
+			if(i == 3){
+				cons->cursor_c = -1;
+			}
+			if(i == 13){
+				mouse->phase = 1;
+			}
+			if(i == 14){
+				mouse->phase = 2;
+			}
+			if(i == 4){
+				timer_cancel(cons->timer);
+				io_cli();
+				fifo32_put(sys_fifo, cons->sht - shtctl->sheets0 + 2024);
+				cons->sht = 0;
+				io_sti();
+			}
+			if (i >= 512){
+				i -= 512;
+				if(mouse->phase == 1){
+					mouse->phase = 0;
+					mouse->x = i - sht->vx0;
+					if(sht->vx0 <= i && i <= sht->bxsize + sht->vx0){
+						
+					} else {
+						mouse->x = 0;
+					}
+				} else {
+					if(mouse->phase == 2){
+						mouse->y = i - sht->vy0;
+						mouse->phase = 0;
+						if(sht->vy0 <= i && i <= sht->bysize + sht->vy0){
+							if(mouse->x != 0){
+								*((int *) (ecx + ds_base)) = mouse->x;
+								*((int *) (esi + ds_base)) = mouse->y;
+								return 0;
+							}
+						}
+					}
+				}
+			}
 		}
 	} else if(edx == 18){
 		reg[7] = (int) timer_alloc();
@@ -139,10 +194,15 @@ int *api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax)
 		timer_free((struct TIMER *) ebx);
 	} else if(edx == 22){
 		if(eax == 0){
-			beep_off();
+			i = io_in8(0x61);
+			io_out8(0x61, i & 0xd);
 		} else {
-			beep_settone(eax);
-			beep_on();
+			i = 1193180000 / eax;
+			io_out8(0x43, 0xb6);
+			io_out8(0x42, i & 0xff);
+			io_out8(0x42, i >> 8);
+			i = io_in8(0x61);
+			io_out8(0x61, (i | 0x03) & 0x0f);
 		}
 	} else if(edx == 23){
 		for(i = 0; i < 8; i++){
@@ -221,24 +281,6 @@ int *api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax)
 				cons_putstr0(cons, "switch(key):\nEnglish ASCII mode.\n\n");
 				cons_putchar(cons, '>', 1);
 			}
-		}
-	} else if(edx == 31){
-		sht = (struct SHEET *) ebx;
-		y = *((int *) 0xfd8);
-		y -= sht->vy0;
-		if(y >= 0 && y <= sht->bysize){
-			reg[7] = y;
-		}
-	} else if(edx == 32){
-		btn = *((int *) 0xfd4);
-		if((btn & 0x01) != 0){
-			reg[7] = 1;
-		} else if((btn & 0x02) != 0){
-			reg[7] = 2;
-		} else if((btn & 0x04) != 0){
-			reg[7] = 3;
-		} else {
-			reg[7] = -1;
 		}
 	}
 	return 0;

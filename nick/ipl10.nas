@@ -1,31 +1,35 @@
-; nick-ipl
+; haribote-ipl
 ; TAB=4
+;==================================================================
 
-CYLS	EQU		10				; 声明CYLS=10
+; 该程序会将软盘中从0柱面0磁头2扇区开始直到9柱面1磁头18扇区的内容
+; 读入内存0x8200~0x34fff中，并跳转到0xc200处继续执行asmhead
+;==================================================================
 
-		ORG		0x7c00			; 指明程序装载地址
+CYLS	EQU		10				; 需要读入的柱面数
 
-; 标准FAT12格式软盘专用的代码 Stand FAT12 format floppy code
+		ORG		0x7c00			; 指明程序的装载地址
 
-		JMP		entry
-		DB		0x90
-		DB		"NICKIPL "		; 启动扇区名称（8字节）
-		DW		512				; 每个扇区（sector）大小（必须512字节）
-		DB		1				; 簇（cluster）大小（必须为1个扇区）
-		DW		1				; FAT起始位置（一般为第一个扇区）
-		DB		2				; FAT个数（必须为2）
-		DW		224				; 根目录大小（一般为224项）
-		DW		2880			; 该磁盘大小（必须为2880扇区1440*1024/512）
-		DB		0xf0			; 磁盘类型（必须为0xf0）
-		DW		9				; FAT的长度（必9扇区）
-		DW		18				; 一个磁道（track）有几个扇区（必须为18）
-		DW		2				; 磁头数（必2）
-		DD		0				; 不使用分区，必须是0
-		DD		2880			; 重写一次磁盘大小
-		DB		0,0,0x29		; 意义不明（固定）
-		DD		0xffffffff		; （可能是）卷标号码
-		DB		"NICK-OS    "	; 磁盘的名称（必须为11字节，不足填空格）
-		DB		"FAT12   "		; 磁盘格式名称（必8字节，不足填空格）
+; 以下的记述用于标准FAT12格式的软盘
+		JMP		entry			; 跳转到entry处执行 注意：该跳转指令只占用2个字节，而标准规定的是3个字节 所以才会有下面的DB 0x90
+		DB		0x90			; 机器码，事实上，这相当于一个"nop"指令，即空指令
+		DB		"NICKIPL "		; 启动区的名称
+		DW		512				; 每扇区字节数
+		DB		1				; 每簇的扇区数 此处为1 表面一个簇就等于一个扇区
+		DW		1				; 这个值应该表示为第一个FAT文件分配表之前的引导扇区，一般情况只保留一个扇区
+		DB		2				; FAT表的个数
+		DW		224				; 根目录中文件数的最大值
+		DW		2880			; 逻辑扇区总数
+		DB		0xf0			; 磁盘的种类
+		DW		9				; 每个FAT占用多少个扇区
+		DW		18				; 每磁道扇区数
+		DW		2				; 磁头数
+		DD		0				; 隐藏扇区数
+		DD		2880			; 如果逻辑扇区总数为0，则在这里记录扇区总数
+		DB		0,0,0x29		; 中断13的驱动器号、未使用、扩展引导标志
+		DD		0xffffffff		; 卷序列号
+		DB		"NICK-OS    "	; 卷标，必须是11个字符，不足以空格填充
+		DB		"FAT12   "		; 文件系统类型，必须是8个字符，不足填充空格
 		RESB	18				; 先空出18字节
 
 ; 程序主体
@@ -36,117 +40,72 @@ entry:
 		MOV		SP,0x7c00
 		MOV		DS,AX
 
-; 读取磁盘
+; 读磁盘
 
 		MOV		AX,0x0820
 		MOV		ES,AX
 		MOV		CH,0			; 柱面0
 		MOV		DH,0			; 磁头0
 		MOV		CL,2			; 扇区2
-		MOV		BX,18*2*CYLS-1	; 要读取的合计扇区数
-		CALL	readfast		; 告诉读取
-
-; 读取完毕，跳转到nick.sys执行！
-		MOV		[0x0ff0],CH		; 记录IPL实际读取了多少内容
-		JMP		0xc200
-
-error:
-		MOV		AX,0
-		MOV		ES,AX
-		MOV		SI,msg
-putloop:
-		MOV		AL,[SI]
-		ADD		SI,1			; 给SI加1
-		CMP		AL,0
-		JE		fin
-		MOV		AH,0x0e			; 显示一个文字
-		MOV		BX,15			; 指定字符颜色
-		INT		0x10			; 调用显卡BIOS
-		JMP		putloop
-fin:
-		HLT						; 让CPU停止，等待指令
-		JMP		fin				; 无限循环
-msg:
-		DB		0x0a, 0x0a		; 换行两次
-		DB		"load error"
-		DB		0x0a			; 换行
-		DB		0
-
-readfast:	; 使用AL尽量一次性读取数据 从此开始
-; ES:读取地址, CH:柱面, DH:磁头, CL:扇区, BX:读取扇区数
-
-		MOV		AX,ES			; < 通过ES计算AL的最大值 >
-		SHL		AX,3			; 将AX除以32，将结果存入AH（SHL是左移位指令）
-		AND		AH,0x7f		; AH是AH除以128所得的余数（512*128=64K）
-		MOV		AL,128		; AL = 128 - AH; AH是AH除以128所得的余数（512*128=64K）
-		SUB		AL,AH
-
-		MOV		AH,BL			; < 通过BX计算AL的最大值并存入AH >
-		CMP		BH,0			; if (BH != 0) { AH = 18; }
-		JE		.skip1
-		MOV		AH,18
-.skip1:
-		CMP		AL,AH			; if (AL > AH) { AL = AH; }
-		JBE		.skip2
-		MOV		AL,AH
-.skip2:
-
-		MOV		AH,19			; < 通过CL计算AL的最大值并存入AH >
-		SUB		AH,CL			; AH = 19 - CL;
-		CMP		AL,AH			; if (AL > AH) { AL = AH; }
-		JBE		.skip3
-		MOV		AL,AH
-.skip3:
-
-		PUSH	BX
-		MOV		SI,0			; 计算失败次数的寄存器
+readloop:
+		MOV		SI,0			; 记录失败次数的寄存器
 retry:
-		MOV		AH,0x02			; AH=0x02 : 读取磁盘
+		MOV		AH,0x02			; AH=0x02 :读入磁盘
+		MOV		AL,1			; 读入1个扇区
 		MOV		BX,0
-		MOV		DL,0x00			; A盘
-		PUSH	ES
-		PUSH	DX
-		PUSH	CX
-		PUSH	AX
+		MOV		DL,0x00			; A驱动器
 		INT		0x13			; 调用磁盘BIOS
-		JNC		next			; 没有出错的话则跳转至next
-		ADD		SI,1			; 将SI加1
-		CMP		SI,5			; 将SI与5比较
-		JAE		error			; SI >= 5则跳转至error
+		JNC		next			; 没有出错则跳转到next
+		ADD		SI,1			; SI加1
+		CMP		SI,5			; SI与5进行比较
+		JAE		error			; SI >= 5 跳转到error
 		MOV		AH,0x00
-		MOV		DL,0x00		; A盘
-		INT		0x13			; 驱动器重置
-		POP		AX
-		POP		CX
-		POP		DX
-		POP		ES
+		MOV		DL,0x00			; A驱动器
+		INT		0x13			; 重置驱动器
 		JMP		retry
 next:
-		POP		AX
-		POP		CX
-		POP		DX
-		POP		BX				; 将ES的内容存入BX
-		SHR		BX,5			; 将BX由16字节为单位转换为512字节为单位
-		MOV		AH,0
-		ADD		BX,AX			; BX += AL;
-		SHL		BX,5			; 将BX由512字节为单位转换为16字节为单位
-		MOV		ES,BX			; 相当于EX += AL * 0x20;
-		POP		BX
-		SUB		BX,AX
-		JZ		.ret
-		ADD		CL,AL			; 将CL加上AL
-		CMP		CL,18			; 将CL与18比较
-		JBE		readfast	; CL <= 18则跳转至readfast
-		MOV		CL,1
-		ADD		DH,1
-		CMP		DH,2
-		JB		readfast	; DH < 2则跳转至readfast
-		MOV		DH,0
+		MOV		AX,ES			; 把内存地址后移0x200
+		ADD		AX,0x0020
+		MOV		ES,AX			
+		ADD		CL,1			; CL加1
+		CMP		CL,18			; 比较CL与18
+		JBE		readloop		; CL <= 18 则跳转到readloop
+		MOV		CL,1			; 读另一磁头通柱面的1扇区
+		ADD		DH,1			; 修改磁头号 使它始终为0或1
+		CMP		DH,2			
+		JB		readloop		; DH < 2 跳转readloop 开始读另一磁头同柱面的1~18扇区
+		MOV		DH,0			; 开始读下一柱面 0磁头 1扇区
 		ADD		CH,1
-		JMP		readfast
-.ret:
-		RET
+		CMP		CH,CYLS
+		JB		readloop		; CH < CYLS 跳转readloop
 
-		RESB	0x7dfe-$	; 到0x7dfe为止用0x00填充的指令
+; 	所有的数据读入工作已经完成
+
+		MOV		[0x0ff0],CH		; 可以认为是保存该启动区共读入的柱面数
+		JMP		0xc200			; 此处将跳转到asmhead中执行
+
+; 如果不出错的话 此段代码不会被执行
+;---------------------------------------------------------------------
+error:
+		MOV		SI,msg
+putloop:						; 主要是输出错误信息
+		MOV		AL,[SI]
+		ADD		SI,1			; SI加1
+		CMP		AL,0
+		JE		fin				; 字符串输出结束 则跳转
+		MOV		AH,0x0e			
+		MOV		BX,15			; bh = 0   bl为配色方案
+		INT		0x10			; 调用显卡BIOS
+		JMP		putloop			; 继续输出
+fin:
+		HLT						; 让CPU停止 等待指令
+		JMP		fin				; 死循环
+msg:
+		DB		0x0a, 0x0a		; 换行2次
+		DB		"load error"	; 要输出的字符
+		DB		0x0a			; 换行
+		DB		0				; 结束输出的标识
+;-----------------------------------------------------------------------
+		RESB	0x7dfe-$		; 填充字符
 
 		DB		0x55, 0xaa

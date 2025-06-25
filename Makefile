@@ -4,7 +4,6 @@ INCPATH  = ../z_tools/nick/
 MAKE     = $(TOOLPATH)make.exe -r
 EDIMG    = $(TOOLPATH)edimg.exe
 WRITE    = $(TOOLPATH)img_writer.exe
-BIM2BIN  = $(TOOLPATH)bim2bin.exe -osacmp
 COPY     = copy
 DEL      = del
 
@@ -18,33 +17,31 @@ nick.img : nick/nick.sys nick/ipl10.nas Makefile\
 	hello/hello.nck lines/lines.nck stars/stars.nck\
 	swatch/swatch.nck textbox/textbox.nck timer/timer.nck\
 	walk/walk.nck winhello/winhello.nck sosu/sosu.nck\
-	notrec/notrec.nck type++/type++.nck chinese/chinese.fnt\
-	invader/invader.nck calc/calc.nck
-	$(BIM2BIN) in:nick/ipl10.nas out:ipl10.nas
+	notrec/notrec.nck hello2/hello2.nck\
+	type++/type++.nck chinese/chinese.fnt
 	$(EDIMG)   imgin:../z_tools/fdimg0at.tek \
 		wbinimg src:nick/ipl10.bin len:512 from:0 to:0 \
 		copy from:nick/nick.sys to:@: \
-		copy from:ipl10.nas to:@: \
+		copy from:nick/ipl10.nas to:@: \
 		copy from:a/a.nck to:@: \
 		copy from:hello/hello.nck to:@: \
-		copy from:winhello/winhello.nck to:@: \
-		copy from:stars/stars.nck to:@: \
-		copy from:about/about.nck to:@: \
-		copy from:lines/lines.nck to:@: \
-		copy from:walk/walk.nck to:@: \
-		copy from:swatch/swatch.nck to:@: \
-		copy from:beepdown/beepdown.nck to:@: \
-		copy from:beepup/beepup.nck to:@: \
-		copy from:timer/timer.nck to:@: \
-		copy from:draw/draw.nck to:@: \
-		copy from:color/color.nck to:@: \
-		copy from:textbox/textbox.nck to:@: \
-		copy from:sosu/sosu.nck to:@: \
-		copy from:notrec/notrec.nck to:@: \
-		copy from:type++/type++.nck to:@: \
-		copy from:invader/invader.nck to:@: \
-		copy from:calc/calc.nck to:@: \
-		copy from:chinese/chinese.fnt to:@: \
+		copy from:winhello/winhello.nck to:@:\
+		copy from:stars/stars.nck to:@:\
+		copy from:about/about.nck to:@:\
+		copy from:lines/lines.nck to:@:\
+		copy from:walk/walk.nck to:@:\
+		copy from:swatch/swatch.nck to:@:\
+		copy from:beepdown/beepdown.nck to:@:\
+		copy from:beepup/beepup.nck to:@:\
+		copy from:timer/timer.nck to:@:\
+		copy from:draw/draw.nck to:@:\
+		copy from:color/color.nck to:@:\
+		copy from:textbox/textbox.nck to:@:\
+		copy from:sosu/sosu.nck to:@:\
+		copy from:notrec/notrec.nck to:@:\
+		copy from:hello2/hello2.nck to:@:\
+		copy from:type++/type++.nck to:@:\
+		copy from:chinese/chinese.fnt to:@:\
 		imgout:nick.img
 		
 run :
@@ -78,9 +75,8 @@ full :
 	$(MAKE) -C sosu
 	$(MAKE) -C chinese
 	$(MAKE) -C notrec
+	$(MAKE) -C hello2
 	$(MAKE) -C type++
-	$(MAKE) -C invader
-	$(MAKE) -C calc
 	$(MAKE) nick.img
 	
 run_full :
@@ -123,9 +119,8 @@ clean_full :
 	$(MAKE) -C winhello	clean
 	$(MAKE) -C sosu		clean
 	$(MAKE) -C notrec	clean
+	$(MAKE) -C hello2	clean
 	$(MAKE) -C type++	clean
-	$(MAKE) -C invader	clean
-	$(MAKE) -C calc		clean
 	
 	
 src_only_full :
@@ -149,10 +144,9 @@ src_only_full :
 	$(MAKE) -C winhello	src_only
 	$(MAKE) -C sosu 	src_only
 	$(MAKE) -C notrec	src_only
+	$(MAKE) -C hello2	src_only
 	$(MAKE) -C type++	src_only
 	$(MAKE) -C chinese	src_only
-	$(MAKE) -C invader	src_only
-	$(MAKE) -C calc 	src_only
 	-$(DEL) nick.img
 	
 refresh :

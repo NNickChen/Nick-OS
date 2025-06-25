@@ -41,7 +41,6 @@ void NickStartup(void)
 	struct TASK *task_a, *task_time, *task;
 	int key_shift = 0, key_leds = (binfo->leds >> 4) & 7, keycmd_wait = -1, key_ctl = 0;
 	fifo32_init(&keycmd, 32, keycmd_buf, 0);
-	*((int *) 0xfe0) = (int) &key_win;
 
 	init_gdtidt();
 	init_pic();
@@ -60,6 +59,37 @@ void NickStartup(void)
 	memman_free(memman, 0x00400000, memtotal - 0x00400000);
 
 	init_palette();
+	/* if (binfo->vb != 0x0000){
+		start_timer = timer_alloc();
+		timer_init(start_timer, &fifo, 10);
+		timer_settime(start_timer, 500);
+		block_timer = timer_alloc();
+		timer_init(block_timer, &fifo, 5);
+		timer_settime(block_timer, 50);
+		boxfill8(binfo->vram, binfo->scrnx, COL8_00FFFF, 0, 0, binfo->scrnx, binfo->scrny);
+		putfonts8_asc(binfo->vram, binfo->scrnx, binfo->scrnx/2-9*8, binfo->scrny/2, COL8_000000, "Welcome to Nick OS!");
+		putfonts8_asc(binfo->vram, binfo->scrnx, binfo->scrnx/2-7*8, binfo->scrny/2+16, COL8_000000, "Starting Up... ");
+		x=binfo->scrnx/2-9*8;
+		for(;;){
+			io_cli();
+			if(fifo32_status(&fifo) == 0){
+				io_stihlt();
+			} else {
+				i = fifo32_get(&fifo);
+				if(i == 5){
+					boxfill8(binfo->vram, binfo->scrnx, COL8_000000, x, binfo->scrny/2+32, x+10, binfo->scrny/2+32+10);
+					putfonts8_asc(binfo->vram, binfo->scrnx, binfo->scrnx/2-9*8, binfo->scrny/2, COL8_000000, "Welcome to Nick OS! ");
+					putfonts8_asc(binfo->vram, binfo->scrnx, binfo->scrnx/2-7*8, binfo->scrny/2+16, COL8_000000, "Starting Up... ");
+					x += 15;
+					timer_settime(block_timer, 50);
+				} else {
+					if(i == 10){
+						break;
+					}
+				}
+			}
+		}
+	} */
 	shtctl = shtctl_init(memman, binfo->vram, binfo->scrnx, binfo->scrny);
 	*((int *) 0xfe4) = (int) shtctl;
 	task_a = task_init(memman);
@@ -95,6 +125,7 @@ void NickStartup(void)
 	buf_back  = (unsigned char *) memman_alloc_4k(memman, binfo->scrnx * binfo->scrny);
 	sheet_setbuf(sht_back, buf_back, binfo->scrnx, binfo->scrny, -1);
 	init_screen8(buf_back, binfo->scrnx, binfo->scrny, 16 + 0 + 3 * 6 + 4 * 36);
+	key_win = sht_back;
 	task_time = task_alloc();
 	task_time->tss.esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024 - 8;
 	task_time->tss.eip = (int) &time_task;
@@ -264,7 +295,7 @@ void NickStartup(void)
 				if (i == 256 + 0x57){
 					sheet_updown(shtctl->sheets[1], shtctl->top - 1);
 				}
-				if (i == 256 + 0x3b && key_shift != 0){
+				if (i == 256 + 0x3b && key_shift != 0 && key_win != 0){
 					if(show == 0){
 						show = 1;
 					} else if(show != 0){
@@ -321,12 +352,9 @@ void NickStartup(void)
 						my = binfo->scrny - 1;
 					}
 					if(show != 0){
-						sprintf(s, "(%4d, %3d)", mx, my);
-						putfonts8_asc_sht(sht_back, 0, 0, COL8_FFFFFF, get_bc(buf_back), s, 11);
+						sprintf(s, "(%3d, %3d)", mx, my);
+						putfonts8_asc_sht(sht_back, 0, 0, COL8_FFFFFF, get_bc(buf_back), s, 10);
 					}
-					*((int *) 0xfdc) = mx;
-					*((int *) 0xfd8) = my;
-					*((int *) 0xfd4) = mdec.btn;
 					new_mx = mx;
 					new_my = my;
 					if ((mdec.btn & 0x01) != 0) {
@@ -379,6 +407,12 @@ void NickStartup(void)
 							new_wx = (mmx2 + x + 2) & ~3;
 							new_wy = new_wy + y;
 							mmy = my;
+						}
+						if((key_win->flags & 0x10) != 0){
+							fifo32_put(&key_win->task->fifo, 13);
+							fifo32_put(&key_win->task->fifo, mx + 512);
+							fifo32_put(&key_win->task->fifo, 14);
+							fifo32_put(&key_win->task->fifo, my + 512);
 						}
 					} else {
 						mmx = -1;

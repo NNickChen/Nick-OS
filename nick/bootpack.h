@@ -1,11 +1,12 @@
 /* asmhead.nas */
 struct BOOTINFO { /* 0x0ff0-0x0fff */
-	char cyls; /* 启动时读入的柱面数 */
-	char leds; /* LED灯的状态*/
-	char vmode; /* 显示模式  */
+	char cyls; /* ??????????????? */
+	char leds; /* LED????*/
+	char vmode; /* ??????  */
 	char reserve;
-	short scrnx, scrny; /* 分辨率 */
-	char *vram; /* 显存的首地址 */
+	short scrnx, scrny; /* ????? */
+	char *vram; /*??????? */
+	int vb;
 };
 #define ADR_BOOTINFO	0x00000ff0
 #define ADR_DISKIMG     0x00100000
@@ -372,8 +373,3 @@ struct TASK *open_constask(struct SHEET *sht, unsigned int memtotal);
 /* tek.c */
 int tek_getsize(unsigned char *p);
 int tek_decomp(unsigned char *p, char *q, int size);
-
-/* beep.c */
-void beep_on(void);
-void beep_settone(int tone);
-void beep_off(void);

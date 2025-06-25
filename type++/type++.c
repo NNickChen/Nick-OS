@@ -20,9 +20,9 @@ void NickStartup(void)
 		}
 	} else {
 		if(api_getlang == 0){
-			api_putstr0("File not found.\n");
+			printf("File not found.\n");
 		} else {
-			api_putstr0("找不到文件。\n");
+			printf("找不到文件。\n");
 		}
 	}
 	api_end();

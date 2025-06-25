@@ -4,22 +4,22 @@ void init_palette(void)
 {
 	int r, g, b;
 	static unsigned char table_rgb[16 * 3] = {
-		0x00, 0x00, 0x00,	/*  0:çï */
-		0xff, 0x00, 0x00,	/*  1:ó∫? */
-		0x00, 0xff, 0x00,	/*  2:ó∫? */
-		0xff, 0xff, 0x00,	/*  3:ó∫â© */
-		0x00, 0x00, 0xff,	/*  4:ó∫? */
-		0xff, 0x00, 0xff,	/*  5:ó∫éá */
-		0x00, 0xff, 0xff,	/*  6:êÛó∫? */
-		0xff, 0xff, 0xff,	/*  7:îí */
-		0xc6, 0xc6, 0xc6,	/*  8:ó∫äD */
-		0x84, 0x00, 0x00,	/*  9:à√? */
-		0x00, 0x84, 0x00,	/* 10:à√? */
-		0x84, 0x84, 0x00,	/* 11:à√â© */
-		0x00, 0x00, 0x84,	/* 12:à√? */
-		0x84, 0x00, 0x84,	/* 13:à√éá */
-		0x00, 0x84, 0x84,	/* 14:êÛà√? */
-		0x84, 0x84, 0x84	/* 15:à√äD */
+		0x00, 0x00, 0x00,	
+		0xff, 0x00, 0x00,	
+		0x00, 0xff, 0x00,	
+		0xff, 0xff, 0x00,	
+		0x00, 0x00, 0xff,	
+		0xff, 0x00, 0xff,	
+		0x00, 0xff, 0xff,	
+		0xff, 0xff, 0xff,	
+		0xc6, 0xc6, 0xc6,	
+		0x84, 0x00, 0x00,	
+		0x00, 0x84, 0x00,	
+		0x84, 0x84, 0x00,	
+		0x00, 0x00, 0x84,	
+		0x84, 0x00, 0x84,	
+		0x00, 0x84, 0x84,	
+		0x84, 0x84, 0x84	
 	};
 	set_palette(0, 15, table_rgb);
 	unsigned char table2[216 * 3];
@@ -105,7 +105,7 @@ void putfont8(char *vram, int xsize, int x, int y, char c, char *font)
 void putfont8_ch(char *vram, int xsize, int x, int y, char c, char *font)
 {
 	int i;
-	char *p, d; /* data */
+	char *p, d;
 	for (i = 0; i < 16; i++){
 		p = vram + (y + i) * xsize + x;
 		d = font[i * 2];
@@ -136,7 +136,7 @@ void putfonts8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s
 	} else if(task->langmode == 1){
 		for (; *s != 0x00; s++) {
 			if(task->langbyte1 == 0){
-				if(*s >= 0xa1 && *s <= 0xfe){
+				if(*s >= 0x80){
 					task->langbyte1 = *s;
 				} else {
 					putfont8(vram, xsize, x, y, c, chinese + *s * 16);
@@ -158,22 +158,22 @@ void putfonts8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s
 void init_mouse_cursor8(char *mouse, char bc)
 {
 	static char cursor[16][16] = {
-		"**..............",
-		"*O*.............",
-		"*OO*............",
-		"*OOO*...........",
-		"*OOOO*..........",
-		"*OOOOO*.........",
-		"*OOOOOO*........",
+		"**************..",
+		"*OOOOOOOOOOO*...",
+		"*OOOOOOOOOO*....",
+		"*OOOOOOOOO*.....",
+		"*OOOOOOOO*......",
+		"*OOOOOOO*.......",
 		"*OOOOOOO*.......",
 		"*OOOOOOOO*......",
-		"*OOOOO*****.....",
-		"*OO*OO*.........",
-		"*O*.*OO*........",
-		"**..*OO*........",
-		"*....*OO*.......",
-		".....*OO*.......",
-		"......**........",
+		"*OOOO**OOO*.....",
+		"*OOO*..*OOO*....",
+		"*OO*....*OOO*...",
+		"*O*......*OOO*..",
+		"**........*OOO*.",
+		"*..........*OOO*",
+		"............*OO*",
+		".............***"
 	};
 	int x, y;
 

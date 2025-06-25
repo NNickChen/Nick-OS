@@ -1,4 +1,4 @@
-
+/* ƒ^ƒCƒ}ŠÖŒW */
 
 #include "bootpack.h"
 

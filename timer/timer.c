@@ -15,7 +15,7 @@ void NickStartup(void)
 		win = api_openwin(buf, 150, 50, -1, "¼ÆÊ±Æ÷", 0);
 	}
 
-restart:	
+go:	
 	key_to = 0;
 	hou = 0;
 	min = 0;
@@ -123,7 +123,7 @@ restart:
 		} else if(i == 251){
 			api_end();
 		} else if(i == 0x0a){
-			goto restart;
+			goto go;
 		}
 	}
 	api_beep(200000);
@@ -138,7 +138,7 @@ restart:
 			api_inittimer(timer, 128);
 			api_settimer(timer, 100);
 		} else if(i == 0x0a){
-			goto restart;
+			goto go;
 		} else if(i == 251){
 			goto fin;
 		}

@@ -1,7 +1,6 @@
 OBJS_BOOTPACK = bootpack.obj naskfunc.obj english.obj graphic.obj dsctbl.obj \
 		int.obj fifo.obj keyboard.obj mouse.obj memory.obj sheet.obj timer.obj \
-		mtask.obj cmos.obj console.obj api.obj cmd.obj window.obj file.obj tek.obj\
-		beep.obj
+		mtask.obj cmos.obj console.obj api.obj cmd.obj window.obj file.obj tek.obj
 		
 TOOLPATH = ../../z_tools/
 INCPATH  = ../../z_tools/nick/
