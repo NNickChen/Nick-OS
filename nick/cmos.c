@@ -80,7 +80,4 @@ void time_task(struct SHEET *sht_back)
 			}
 		}
 	}
-}
-	
-	
-	
+}	

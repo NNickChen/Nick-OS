@@ -1,22 +1,24 @@
 TOOLPATH = ../../z_tools/
 INCPATH  = ../../z_tools/nick/
 
-MAKE     = $(TOOLPATH)make.exe -r
-NASK     = $(TOOLPATH)nask.exe
-CC1      = $(TOOLPATH)cc1.exe -I$(INCPATH) -I../ -Os -Wall -quiet
-GAS2NASK = $(TOOLPATH)gas2nask.exe -a
-OBJ2BIM  = $(TOOLPATH)obj2bim.exe
-MAKEFONT = $(TOOLPATH)makefont.exe
-BIN2OBJ  = $(TOOLPATH)bin2obj.exe
-BIM2NCK  = $(TOOLPATH)bim2nck.exe
-RULEFILE = ../nick.rul
-EDIMG    = $(TOOLPATH)edimg.exe
-WRITE    = $(TOOLPATH)img_writer.exe
-GOLIB	 = $(TOOLPATH)golib00.exe
+MAKE       = $(TOOLPATH)make.exe -r
+NASK       = $(TOOLPATH)nask.exe
+CC1        = $(TOOLPATH)cc1.exe -I$(INCPATH) -I../ -Os -Wall -quiet
+GAS2NASK   = $(TOOLPATH)gas2nask.exe -a
+OBJ2BIM    = $(TOOLPATH)obj2bim.exe
+MAKEFONT   = $(TOOLPATH)makefont.exe
+BIN2OBJ    = $(TOOLPATH)bin2obj.exe
+BIM2NCK    = $(TOOLPATH)bim2nck.exe
+RULEFILE   = ../nick.rul
+EDIMG      = $(TOOLPATH)edimg.exe
+WRITE      = $(TOOLPATH)img_writer.exe
+GOLIB	   = $(TOOLPATH)golib00.exe
+BIM2BIN	   = $(TOOLPATH)bim2bin.exe -osacmp
 APILIBPATH = ../apilib/
-NICKPATH = ../nick/
-COPY     = copy
-DEL      = del
+NICKPATH   = ../nick/
+RFUNCPATH  = ../rfunc
+COPY       = copy
+DEL        = del
 
 
 default : 
@@ -36,8 +38,11 @@ nick.img : $(NICKPATH)nick.sys $(NICKPATH)ipl20.bin $(APP).nck Makefile ../app_m
 		copy from:../chinese/chinese.fnt to:@:\
 		imgout:nick.img
 		
-$(APP).nck : $(APP).bim Makefile ../app_make.txt
-	$(BIM2NCK) $(APP).bim $(APP).nck $(MALLOC)
+$(APP).org : $(APP).bim Makefile ../app_make.txt
+	$(BIM2NCK) $(APP).bim $(APP).org $(MALLOC)
+	
+$(APP).nck : $(APP).org Makefile ../app_make.txt
+	$(BIM2BIN) in:$(APP).org out:$(APP).nck
 	
 %.gas : %.c ../apilib.h Makefile ../app_make.txt
 	$(CC1) -o $*.gas $*.c
@@ -47,7 +52,9 @@ $(APP).nck : $(APP).bim Makefile ../app_make.txt
 
 %.obj : %.nas Makefile ../app_make.txt
 	$(NASK) $*.nas $*.obj $*.lst
-	
+
+tek2 : $(APP).org Makefile ../app_make.txt 
+	$(BIM2BIN) in:$(APP).org out:$(APP).nck -tek2
 	
 run : 
 	$(MAKE) nick.img
@@ -56,11 +63,14 @@ run :
 	
 full :
 	$(MAKE) -C $(APILIBPATH)
+	$(MAKE) -C $(RFUNCPATH)
 	$(MAKE) $(APP).nck
 	
 run_full :
 	$(MAKE) -C $(APILIBPATH)
+	$(MAKE) -C $(RFUNCPATH)
 	$(MAKE) -C $(NICKPATH)
+	$(MAKE) -C ../chinese
 	$(MAKE) run
 	
 clean :
@@ -68,6 +78,7 @@ clean :
 	-$(DEL) *.obj
 	-$(DEL) *.map
 	-$(DEL) *.bim
+	-$(DEL) *.org
 
 src_only :
 	-$(DEL) $(APP).nck

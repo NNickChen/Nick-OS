@@ -1,4 +1,4 @@
-Nick OS [版本 0.0.7]
+Nick OS [版本 0.0.8]
 (c) 2018 Nick 保留所有权利
                  
 欢迎来到Nick OS！

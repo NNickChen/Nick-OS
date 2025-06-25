@@ -309,13 +309,33 @@ struct FILEHANDLE {
 	int pos;
 };
 void console_task(struct SHEET *sheet, unsigned int memtotal);
-int *api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
+void cons_newline(struct CONSOLE *cons);
 void cons_putchar(struct CONSOLE *cons, int chr, char move);
 void cons_putstr0(struct CONSOLE *cons, char *s);
 void cons_putstr1(struct CONSOLE *cons, char *s, int l);
 int *inthandler0d(int *esp);
 int *inthandler0c(int *esp);
 int *inthandler00(int *esp);
+struct MOUSE {
+	int x, y;
+	int phase;
+};
+int *api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
+void linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col);
+void cmd(struct CONSOLE *cons, unsigned int memtotal, int *fat, char *cmdline);
+void cmd_mem(struct CONSOLE *cons, unsigned int memtotal);
+void cmd_cls(struct CONSOLE *cons);
+void cmd_dir(struct CONSOLE *cons);
+void cmd_type(struct CONSOLE *cons, int *fat, char *cmdline);
+void cmd_time(struct CONSOLE *cons);
+void cmd_date(struct CONSOLE *cons);
+void cmd_bc(struct CONSOLE *cons, char *cmdline);
+void cmd_exit(struct CONSOLE *cons, int *fat);
+void cmd_start(struct CONSOLE *cons, char *cmdline, int memtotal);
+void cmd_ncst(struct CONSOLE *cons, char *cmdline, int memtotal);
+void cmd_langmode(struct CONSOLE *cons, char *cmdline);
+void cmd_getlang(struct CONSOLE *cons);
+int cmd_run(struct CONSOLE *cons, char *cmdline, int *fat);
 
 /* file.c */
 struct FILEINFO {
@@ -328,6 +348,7 @@ struct FILEINFO {
 void file_readfat(int *fat, unsigned char *img);
 void file_load(int clustno, int size, char *buf, int *fat, char *img);
 struct FILEINFO *file_search(char *name, struct FILEINFO *finfo, int max);
+char *file_load2(int clustno, int *size, int *fat);
 
 /* operation.c */
 unsigned int involution(unsigned int base, unsigned int exponent);
@@ -342,3 +363,7 @@ struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal);
 void close_constask(struct TASK *task);
 void close_console(struct SHEET *sht);
 struct TASK *open_constask(struct SHEET *sht, unsigned int memtotal);
+
+/* tek.c */
+int tek_getsize(unsigned char *p);
+int tek_decomp(unsigned char *p, char *q, int size);

@@ -1,5 +1,6 @@
 #include "apilib.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 /* 
 	补充：1.质数的定义：质数又称素数。一个大于1的自然数，除了1和它自身外，不能被其他自然数整除的数叫做质数；否则称为合数。
@@ -7,12 +8,10 @@
 		质数定义为在大于1的自然数中，除了1和它本身以外不再有其他因数。
 ---------------------------------------------------------------------------- 
 */
-	
-int strtol(char *s, char **endp, int base); /* 将字符串形式的数值转换为整数 */
 
 void HariMain(void)
 {
-	char s[8], cmdline[60], *p;
+	char cmdline[60], *p;
 	int max, langmode = api_getlang();; /* max:最大值 langmode:当前显示模式 */
 	api_cmdline(cmdline, 60); /* 获取命令行的内容 */
 	
@@ -34,8 +33,7 @@ void HariMain(void)
 	}
 	for(i = 2; i < max; i++){ /*从2一直循环到上限 */
 		if(flag[i] == 0){ /* 如果是质数 */
-			sprintf(s, "%d ", i);
-			api_putstr0(s); /* 显示 */
+			printf("%d ", i); /* 标准函数 */
 			for(j = 2 * i; j < max; j += i){
 				flag[j] = 1; /* 将其的倍数标为合数 */
 			}

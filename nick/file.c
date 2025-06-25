@@ -31,6 +31,26 @@ void file_load(int clustno, int size, char *buf, int *fat, char *img)
 	return;
 }
 
+char *file_load2(int clustno, int *size, int *fat)
+{
+	int size1 = *size, size2;
+	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+	char *buf, *buf2;
+	buf = (char *)memman_alloc_4k(memman, size1);
+	file_load(clustno, size1, buf, fat, (char *) ADR_DISKIMG + 0x003e00);
+	if(size1 >= 17){
+		size2 = tek_getsize(buf);
+		if(size2 > 0){
+			buf2 = (char *)memman_alloc_4k(memman, size2);
+			tek_decomp(buf, buf2, size2);
+			memman_free_4k(memman, (int) buf, size1);
+			buf = buf2;
+			*size = size2;
+		}
+	}
+	return buf;
+}
+			
 struct FILEINFO *file_search(char *name, struct FILEINFO *finfo, int max)
 {
 	char s[30];

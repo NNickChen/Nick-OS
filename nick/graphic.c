@@ -1,5 +1,3 @@
-/* グラフィック処理関係 */
-
 #include "bootpack.h"
 
 void init_palette(void)
@@ -82,7 +80,7 @@ void init_screen8(char *vram, int x, int y, int bc)
 	boxfill8(vram, x, COL8_848484, x - 160, y - 23, x - 160, y -  4);
 	boxfill8(vram, x, COL8_FFFFFF, x - 160, y -  3, x -  4, y -  3);
 	boxfill8(vram, x, COL8_FFFFFF, x -  3, y - 24, x -  3, y -  3);
-	putfonts8_asc(vram, x, 9, y - 20, COL8_000000, "Start");
+	putfonts8_asc(vram, x, 9, y - 20, COL8_000000, "?始...");
 	return;
 }
 

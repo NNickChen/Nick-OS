@@ -58,6 +58,7 @@ install :
 full :
 	$(MAKE) -C nick
 	$(MAKE) -C apilib
+	$(MAKE) -C rfunc
 	$(MAKE) -C a
 	
 	$(MAKE) -C about
@@ -75,6 +76,7 @@ full :
 	$(MAKE) -C winhello
 	$(MAKE) -C sosu
 	$(MAKE) -C typeipl
+	$(MAKE) -C chinese
 	$(MAKE) nick.img
 	
 run_full :
@@ -99,6 +101,7 @@ src_only :
 clean_full :
 	$(MAKE) -C nick		clean
 	$(MAKE) -C apilib	clean
+	$(MAKE) -C rfunc	clean
 	$(MAKE) -C a		clean
 	
 	$(MAKE) -C about	clean
@@ -117,9 +120,11 @@ clean_full :
 	$(MAKE) -C sosu		clean
 	$(MAKE) -C typeipl	clean
 	
+	
 src_only_full :
 	$(MAKE) -C nick		src_only
 	$(MAKE) -C apilib	src_only
+	$(MAKE) -C rfunc	src_only
 	$(MAKE) -C a		src_only
 	
 	$(MAKE) -C about	src_only
@@ -137,6 +142,7 @@ src_only_full :
 	$(MAKE) -C winhello	src_only
 	$(MAKE) -C sosu 	src_only
 	$(MAKE) -C typeipl	src_only
+	$(MAKE) -C chinese	src_only
 	-$(DEL) nick.img
 	
 refresh :

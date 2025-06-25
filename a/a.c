@@ -1,9 +1,10 @@
 #include "apilib.h"
+#include <stdio.h>
 
 void HariMain(void)
 {
 	for(;;){
-		api_putchar('A');
+		putchar('A');
 	}
 	api_end();
 }

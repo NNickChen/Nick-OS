@@ -95,20 +95,15 @@ void HariMain(void)
 	task_a = task_init(memman);
 	fifo.task = task_a;
 	task_run(task_a, 1, 2);
-	if(chinese[4096] != 0xff){
-		task_a->langmode = 1;
-	} else {
-		task_a->langmode = 0;
-	}
-	task_a->langbyte1 = 0;
 	
-	chinese = (unsigned char *) memman_alloc_4k(memman, 169552);
 	fat = (int *) memman_alloc_4k(memman, 4 * 2880);
 	file_readfat(fat, (unsigned char *) (ADR_DISKIMG + 0x000200));
 	finfo = file_search("chinese.fnt", (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
 	if(finfo != 0){
-		file_load(finfo->clustno, finfo->size, chinese, fat, (char *) (ADR_DISKIMG + 0x003e00));
+		i = finfo->size;
+		chinese = file_load2(finfo->clustno, &i, fat);
 	} else {
+		chinese = (unsigned char *) memman_alloc_4k(memman, 169552);
 		for(i = 0; i < 4096; i++){
 			chinese[i] = english[i];
 		}
@@ -118,6 +113,12 @@ void HariMain(void)
 	}
 	*((int *) 0xfe8) = (int) chinese;
 	memman_free_4k(memman, (int) fat, 4 * 2880);
+	if(chinese[4096] != 0xff){
+		task_a->langmode = 1;
+	} else {
+		task_a->langmode = 0;
+	}
+	task_a->langbyte1 = 0;
 
 	/* sht_back */
 	sht_back  = sheet_alloc(shtctl);
