@@ -1,0 +1,68 @@
+OBJS_BOOTPACK = bootpack.obj naskfunc.obj hankaku.obj graphic.obj dsctbl.obj \
+		int.obj fifo.obj keyboard.obj mouse.obj memory.obj sheet.obj timer.obj \
+		mtask.obj cmos.obj console.obj window.obj file.obj disk.obj
+		
+TOOLPATH = ../../z_tools/
+INCPATH  = ../../z_tools/nick/
+
+MAKE     = $(TOOLPATH)make.exe -r
+NASK     = $(TOOLPATH)nask.exe
+CC1      = $(TOOLPATH)cc1.exe -I$(INCPATH) -Os -Wall -quiet
+GAS2NASK = $(TOOLPATH)gas2nask.exe -a
+OBJ2BIM  = $(TOOLPATH)obj2bim.exe
+MAKEFONT = $(TOOLPATH)makefont.exe
+BIN2OBJ  = $(TOOLPATH)bin2obj.exe
+BIM2NCK  = $(TOOLPATH)bim2nck.exe
+RULEFILE = ../nick.rul
+COPY     = copy
+DEL      = del
+
+default :
+	$(MAKE) ipl10.bin
+	$(MAKE) nick.sys
+
+ipl10.bin : ipl10.nas Makefile
+	$(NASK) ipl10.nas ipl10.bin ipl10.lst
+	
+
+asmhead.bin : asmhead.nas Makefile
+	$(NASK) asmhead.nas asmhead.bin asmhead.lst
+
+hankaku.bin : hankaku.txt Makefile
+	$(MAKEFONT) hankaku.txt hankaku.bin
+
+hankaku.obj : hankaku.bin Makefile
+	$(BIN2OBJ) hankaku.bin hankaku.obj _hankaku
+
+bootpack.bim : $(OBJS_BOOTPACK) Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:bootpack.bim stack:3136k map:bootpack.map \
+		$(OBJS_BOOTPACK)
+# 3MB+64KB=3136KB
+
+bootpack.nck : bootpack.bim Makefile
+	$(BIM2NCK) bootpack.bim bootpack.nck 0
+	
+nick.sys : asmhead.bin bootpack.nck Makefile
+	copy /B asmhead.bin+bootpack.nck nick.sys
+	
+%.gas : %.c bootpack.h Makefile
+	$(CC1) -o $*.gas $*.c
+
+%.nas : %.gas Makefile
+	$(GAS2NASK) $*.gas $*.nas
+
+%.obj : %.nas Makefile
+	$(NASK) $*.nas $*.obj $*.lst
+	
+	
+clean :
+	-$(DEL) *.lst
+	-$(DEL) *.obj
+	-$(DEL) *.map
+	-$(DEL) *.bim
+	-$(DEL) *.nck
+	
+src_only :
+	$(MAKE) clean
+	-$(DEL) nick.sys
+	

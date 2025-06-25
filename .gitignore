@@ -15,6 +15,7 @@ bits/
 *.nck
 *.lst
 *.map
+*.rul
 
 build/
 dist/
