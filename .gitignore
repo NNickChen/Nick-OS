@@ -19,6 +19,7 @@ bits/
 *.map
 *.rul
 *.org
+*.iso
 
 build/
 dist/
