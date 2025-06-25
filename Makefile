@@ -1,11 +1,11 @@
 OBJS_BOOTPACK = bootpack.obj naskfunc.obj hankaku.obj graphic.obj dsctbl.obj \
 		int.obj fifo.obj keyboard.obj mouse.obj memory.obj sheet.obj timer.obj \
-		mtask.obj cmos.obj
+		mtask.obj cmos.obj console.obj window.obj file.obj
 
 TOOLPATH = ../z_tools/
 INCPATH  = ../z_tools/haribote/
 
-MAKE     = make -r
+MAKE     = $(TOOLPATH)make.exe -r
 NASK     = $(TOOLPATH)nask.exe
 CC1      = $(TOOLPATH)cc1.exe -I$(INCPATH) -Os -Wall -quiet
 GAS2NASK = $(TOOLPATH)gas2nask.exe -a
@@ -19,15 +19,16 @@ WRITE    = $(TOOLPATH)img_writer.exe
 COPY     = copy
 DEL      = del
 
-# デフォルト動作
+
 
 default :
 	$(MAKE) img
 
-# ファイル生成規則
+
 
 ipl10.bin : ipl10.nas Makefile
 	$(NASK) ipl10.nas ipl10.bin ipl10.lst
+	
 
 asmhead.bin : asmhead.nas Makefile
 	$(NASK) asmhead.nas asmhead.bin asmhead.lst
@@ -43,19 +44,27 @@ bootpack.bim : $(OBJS_BOOTPACK) Makefile
 		$(OBJS_BOOTPACK)
 # 3MB+64KB=3136KB
 
-bootpack.hrb : bootpack.bim Makefile
-	$(BIM2HRB) bootpack.bim bootpack.hrb 0
+bootpack.nck : bootpack.bim Makefile
+	$(BIM2HRB) bootpack.bim bootpack.nck 0
 
-nick.sys : asmhead.bin bootpack.hrb Makefile
-	copy /B asmhead.bin+bootpack.hrb nick.sys
+hlt.nck	   : hlt.nas Makefile
+	$(NASK)  hlt.nas hlt.nck 
+	
+nick.sys : asmhead.bin bootpack.nck Makefile
+	copy /B asmhead.bin+bootpack.nck nick.sys
 
-nick.img : ipl10.bin nick.sys Makefile
+nick.img : ipl10.bin nick.sys hlt.nck Makefile
 	$(EDIMG)   imgin:../z_tools/fdimg0at.tek \
 		wbinimg src:ipl10.bin len:512 from:0 to:0 \
 		copy from:nick.sys to:@: \
+		copy from:hankaku.txt to:@: \
+		copy from:ipl10.nas to:@: \
+		copy from:welcome.txt to:@: \
+		copy from:makefile to:@: \
+		copy from:hlt.nck to:@: \
 		imgout:nick.img
 
-# 一般規則
+
 
 %.gas : %.c bootpack.h Makefile
 	$(CC1) -o $*.gas $*.c
@@ -66,7 +75,7 @@ nick.img : ipl10.bin nick.sys Makefile
 %.obj : %.nas Makefile
 	$(NASK) $*.nas $*.obj $*.lst
 
-# コマンド
+
 
 img :
 	$(MAKE) nick.img
@@ -76,9 +85,14 @@ run :
 	$(COPY) nick.img ..\z_tools\qemu\fdimage0.bin
 	$(MAKE) -C ../z_tools/qemu
 
-install:
+install_flash:
 	$(MAKE) img
 	copy nick.img J:\nick.img
+	copy nick.img F:\nick.img
+	
+install_floppy:
+	$(MAKE) img
+	$(WRITE)
 	
 
 
@@ -88,7 +102,7 @@ clean :
 	-$(DEL) *.obj
 	-$(DEL) bootpack.map
 	-$(DEL) bootpack.bim
-	-$(DEL) bootpack.hrb
+	-$(DEL) *.nck
 	-$(DEL) nick.sys
 
 src_only :

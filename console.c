@@ -1,0 +1,286 @@
+#include "bootpack.h"
+#include <stdio.h>
+#include <string.h>
+
+int cons_newline(int cursor_y, struct SHEET *sheet)
+{
+	int x, y;
+	if(cursor_y < 28 + 112){
+		cursor_y += 16;
+	} else {
+		for(y = 28; y < 28 + 112; y ++){
+			for(x = 8; x < 8 + 240; x ++){
+				sheet->buf[x + y * sheet->bxsize] = sheet->buf[x + (y + 16) * sheet->bxsize];
+				}
+			}
+		boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 28 + 112, 8 + 240, 28 + 128);
+		sheet_refresh(sheet, 8, 28, 8 + 240, 28 + 128);
+		}
+	return cursor_y;
+}
+
+void console_task(struct SHEET *sheet, unsigned int memtotal)
+{
+	struct TIMER *timer;
+	struct TASK *task = task_now();
+	int i, fifobuf[128], cursor_x = 16, cursor_y = 60, cursor_c = -1, x, y;
+	char s[30], cmdline[30], *p;
+	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+	struct FILEINFO *finfo = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);
+	int *fat = (int *) memman_alloc_4k(memman, 4 * 2880);
+	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
+	
+	fifo32_init(&task->fifo, 128, fifobuf, task);
+	timer = timer_alloc();
+	timer_init(timer, &task->fifo, 1);
+	timer_settime(timer, 50);
+
+	file_readfat(fat, (unsigned char *)(ADR_DISKIMG + 0x000200));
+	/* プロンプト表示 */
+	putfonts8_asc_sht(sheet, 8, 28, COL8_FFFFFF, COL8_000000, "Nick OS [version 0.0.2]", 23);
+	putfonts8_asc_sht(sheet, 8, 44, COL8_FFFFFF, COL8_000000, "(c) 2017 Nick", 13);
+	putfonts8_asc_sht(sheet, 8, 60, COL8_FFFFFF, COL8_000000, ">", 1);
+
+	for (;;) {
+		io_cli();
+		if (fifo32_status(&task->fifo) == 0) {
+			task_sleep(task);
+			io_sti();
+		} else {
+			i = fifo32_get(&task->fifo);
+			io_sti();
+			if (i <= 1) { 
+				if (i != 0) {
+					timer_init(timer, &task->fifo, 0); 
+					if(cursor_c >= 0){
+						cursor_c = COL8_FFFFFF;
+					}
+				} else {
+					timer_init(timer, &task->fifo, 1); 
+					if(cursor_c >= 0){
+						cursor_c = COL8_000000;
+					}
+				}
+				timer_settime(timer, 50);
+			}
+			if(i == 2){
+				cursor_c = COL8_000000;
+			}
+			if(i ==3){
+				cursor_c = -1;
+				boxfill8(sheet->buf, sheet->bxsize, COL8_000000, cursor_x, cursor_y + 16 - 4, cursor_x + 7, cursor_y + 16);
+			}
+			if (256 <= i && i <= 511) {
+				if (i == 8 + 256) {
+					if (cursor_x > 16) {
+						putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, " ", 1);
+						putfonts8_asc_sht(sheet, cursor_x - 8, cursor_y, COL8_FFFFFF, COL8_000000, " ", 1);
+						cursor_x -= 8;
+					}
+				} else if(i == 10 + 256){
+					putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, " ", 1);
+					cmdline[cursor_x / 8 - 2] = 0;
+					cursor_y = cons_newline(cursor_y, sheet);
+					if(strcmp(cmdline, "mem") == 0){
+						sprintf(s, "total   %dMB", memtotal / (1024 * 1024));
+						putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 30);
+						cursor_y = cons_newline(cursor_y, sheet);
+						sprintf(s, "free %dKB", memman_total(memman) / 1024); 
+						putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 30);
+						cursor_y = cons_newline(cursor_y, sheet);
+						cursor_y = cons_newline(cursor_y, sheet);
+					} else if (strcmp(cmdline, "cls") == 0){
+						boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 28, 8 + 239, 28 + 127);
+						sheet_refresh(sheet, 8, 28, 8 + 240, 28 + 128); 
+						cursor_y = 28;
+					} else if (strcmp(cmdline, "about") == 0){
+						putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, "Nick OS [version 0.0.2]", 23);
+						cursor_y = cons_newline(cursor_y, sheet);
+						putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, "(c) 2017 Nick", 13);
+						cursor_y = cons_newline(cursor_y, sheet);
+						cursor_y = cons_newline(cursor_y, sheet);
+					} else if (strcmp(cmdline, "dir") == 0){
+						for(x = 0; x < 224; x ++){
+							if(finfo[x].name[0] == 0x00){
+								break;
+							}
+							if(finfo[x].name[0] != 0xe5){
+								if((finfo[x].type & 0x18) == 0){
+									sprintf(s, "filename.ext  %7dB", finfo[x].size);
+									for(y = 0; y < 8; y ++){
+										if('A' <= finfo[x].name[y] && finfo[x].name[y] <= 'Z'){
+											s[y] = finfo[x].name[y] + 0x20;
+										} else {
+											s[y] = finfo[x].name[y];
+										}
+									}
+									if(finfo[x].ext[0] != ' '){
+										s[9] = finfo[x].ext[0] + 0x20;
+									} else {
+										s[8] = ' ';
+										s[9] = ' ';
+									}
+									if(finfo[x].ext[1] != ' '){
+										s[10] =finfo[x].ext[1] + 0x20;
+									} else {
+										s[10] = ' ';
+									}
+									if(finfo[x].ext[2] != ' '){
+										s[11] = finfo[x].ext[2] + 0x20;
+									} else {
+										s[11] = ' ';
+									}
+									putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 30);
+									cursor_y = cons_newline(cursor_y, sheet);
+								}
+							}
+						}
+						cursor_y = cons_newline(cursor_y, sheet);
+					} else if(strncmp(cmdline, "type ", 5) == 0){
+						for (y = 0; y < 11; y ++){
+							s[y] = ' ';
+						}
+						y = 0;
+						for(x = 5; y < 11 && cmdline[x] !=0; x ++){
+							if(cmdline[x] == '.' && y <= 8){
+								y = 8;
+							} else {
+								s[y] = cmdline[x];
+								if('a' <= s[y] && s[y] <= 'z'){
+									s[y] -= 0x20;
+								}
+								y ++;
+							}
+						}
+						for(x = 0; x < 224; ){
+							if(finfo[x].name[0] == 0x00){
+								break;
+							}
+							if((finfo[x].type & 0x18) == 0){
+								for(y = 0; y < 11; y ++){
+									if(finfo[x].name[y] != s[y]){
+										goto next;
+									}
+								}
+								break;
+							}
+next:					
+							x ++;
+						}
+						if(x < 244 && finfo[x].name[0] != 0x00){
+							p = (char *) memman_alloc_4k(memman, finfo[x].size);
+							file_load(finfo[x].clustno, finfo[x].size, p, fat, (char *)(ADR_DISKIMG + 0x003e00));
+							cursor_x = 8;
+							for(y = 0; y < finfo[x].size; y++){
+								s[0] = p[y];
+								s[1] = 0;
+								if(s[0] == 0x09){
+									for(;;){
+										putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, " ", 1);
+										cursor_x += 8;
+										if(cursor_x == 8 + 240){
+											cursor_x = 8;
+											cursor_y = cons_newline(cursor_y, sheet);
+										}
+										if(((cursor_x - 8) % 32) == 0){
+											break;
+										}
+									}
+								} else if(s[0] == 0x0a){
+									cursor_x = 8;
+									cursor_y = cons_newline(cursor_y, sheet);
+								} else if(s[0] == 0x0d){
+									
+								} else {
+									putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, s, 1);
+									cursor_x += 8;
+									if(cursor_x == 8 + 240){
+										cursor_x = 8;
+										cursor_y = cons_newline(cursor_y, sheet);
+									}
+								}
+							}
+							memman_free_4k(memman, (int) p, finfo[x].size);
+						} else {
+							putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, "File not found.", 15);
+						}
+						cursor_y = cons_newline(cursor_y, sheet);
+					} else if (strcmp(cmdline, "time") == 0){
+						sprintf(s, "time:       %d:%02d", get_hour_hex(), get_min_hex());
+						putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 17);
+						cursor_y = cons_newline(cursor_y, sheet);
+						cursor_y = cons_newline(cursor_y, sheet);
+					} else if (strcmp(cmdline, "date") == 0){
+						sprintf(s, "date:  %d.%d.%d", get_year(), get_mon_hex(), get_day_of_month());
+						putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 17);
+						cursor_y = cons_newline(cursor_y, sheet);
+						cursor_y = cons_newline(cursor_y, sheet);
+					} else if (strncmp(cmdline, "run ", 4) == 0){
+						for(y = 0; y < 11; y ++){
+							s[y] = ' ';
+						}
+						y = 0;
+						for(x = 4; y < 11 && cmdline[x] != 0; x ++){
+							if(cmdline[x] == '.' && y <= 8){
+								y = 8;
+							} else {
+								s[y] = cmdline[x];
+								if('a' <= s[y] && s[y] <= 'z'){
+									s[y] -= 0x20;
+								}
+								y ++;
+							}
+						}
+						for(x = 0; x < 224; ){
+							if(finfo[x].name[0] == 0x00){
+								break;
+							}
+							if((finfo[x].type & 0x18) == 0){
+								for(y = 0; y < 11; y ++){
+									if(finfo[x].name[y] != s[y]){
+										goto next_app;
+									}
+								}
+								break;
+							}
+next_app:
+							x ++;
+						}
+						if(x < 224 && finfo[x].name[0] != 0x00){
+							p = (char *) memman_alloc_4k(memman, finfo[x].size);
+							file_load(finfo[x].clustno, finfo[x].size, p, fat, (char *)(ADR_DISKIMG + 0x003e00));
+							set_segmdesc(gdt + 1003, finfo[x].size - 1, (int) p, AR_CODE32_ER);
+							farjmp(0, 1003 * 8);
+							memman_free_4k(memman, (int) p, finfo[x].size);
+							cursor_y = cons_newline(cursor_y, sheet);
+						} else {
+							putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, "File not found.", 15);
+							cursor_y = cons_newline(cursor_y, sheet);
+							cursor_y = cons_newline(cursor_y, sheet);
+						}
+						goto fin;
+					} else if (cmdline[0] != 0){					
+						putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, "Bad command.", 12);
+						cursor_y = cons_newline(cursor_y, sheet);
+						cursor_y = cons_newline(cursor_y, sheet);
+					}
+fin:
+					putfonts8_asc_sht(sheet, 8,cursor_y, COL8_FFFFFF, COL8_000000, ">", 1);
+					cursor_x = 16;
+					} else {
+						if (cursor_x < 240) {
+							s[0] = i - 256;
+							s[1] = 0;
+							cmdline[cursor_x / 8 - 2] = i - 256;
+							putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, s, 1);
+							cursor_x += 8;
+						}
+					}
+				}
+			if(cursor_c >= 0){
+				boxfill8(sheet->buf, sheet->bxsize, cursor_c, cursor_x , cursor_y + 16 - 4, cursor_x + 7, cursor_y + 16);
+			}
+			sheet_refresh(sheet, cursor_x, cursor_y + 16 - 4, cursor_x + 8, cursor_y + 16);
+		}
+	}
+}

@@ -1,13 +1,15 @@
 /* asmhead.nas */
 struct BOOTINFO { /* 0x0ff0-0x0fff */
-	char cyls; /* ブートセクタはどこまでディスクを読んだのか */
-	char leds; /* ブート時のキーボードのLEDの状態 */
-	char vmode; /* ビデオモード  何ビットカラーか */
+	char cyls; /* ?入的柱面数*/
+	char leds; /* LED的状? */
+	char vmode; /* 画面模式 */
 	char reserve;
-	short scrnx, scrny; /* 画面解像度 */
+	short scrnx, scrny; /* 分辨率 */
 	char *vram;
+	int vb;
 };
 #define ADR_BOOTINFO	0x00000ff0
+#define ADR_DISKIMG     0x00100000
 
 /* naskfunc.nas */
 void io_hlt(void);
@@ -126,12 +128,12 @@ void enable_mouse(struct FIFO32 *fifo, int data0, struct MOUSE_DEC *mdec);
 int mouse_decode(struct MOUSE_DEC *mdec, unsigned char dat);
 
 /* memory.c */
-#define MEMMAN_FREES		4090	/* これで約32KB */
+#define MEMMAN_FREES		4090	
 #define MEMMAN_ADDR			0x003c0000
-struct FREEINFO {	/* あき情報 */
+struct FREEINFO {	
 	unsigned int addr, size;
 };
-struct MEMMAN {		/* メモリ管理 */
+struct MEMMAN {		
 	int frees, maxfrees, lostsize, losts;
 	struct FREEINFO free[MEMMAN_FREES];
 };
@@ -186,8 +188,10 @@ void timer_settime(struct TIMER *timer, unsigned int timeout);
 void inthandler20(int *esp);
 
 /* mtask.c */
-#define MAX_TASKS		1000	/* 最大タスク数 */
-#define TASK_GDT0		3		/* TSSをGDTの何番から割り当てるのか */
+#define MAX_TASKS		1000	
+#define TASK_GDT0		3		
+#define MAX_TASKS_LV	100
+#define MAX_TASKLEVELS	10
 struct TSS32 {
 	int backlink, esp0, ss0, esp1, ss1, esp2, ss2, cr3;
 	int eip, eflags, eax, ecx, edx, ebx, esp, ebp, esi, edi;
@@ -195,19 +199,27 @@ struct TSS32 {
 	int ldtr, iomap;
 };
 struct TASK {
-	int sel, flags; /* selはGDTの番号のこと */
+	int sel, flags;
+	int level, priority;
+	struct FIFO32 fifo;
 	struct TSS32 tss;
 };
+struct TASKLEVEL {
+	int running;
+	int now; 
+	struct TASK *tasks[MAX_TASKS_LV];
+};
 struct TASKCTL {
-	int running; /* 動作しているタスクの数 */
-	int now; /* 現在動作しているタスクがどれだか分かるようにするための変数 */
-	struct TASK *tasks[MAX_TASKS];
+	int now_lv; 
+	char lv_change; 
+	struct TASKLEVEL level[MAX_TASKLEVELS];
 	struct TASK tasks0[MAX_TASKS];
 };
 extern struct TIMER *task_timer;
+struct TASK *task_now(void);
 struct TASK *task_init(struct MEMMAN *memman);
 struct TASK *task_alloc(void);
-void task_run(struct TASK *task);
+void task_run(struct TASK *task, int level, int priority);
 void task_switch(void);
 void task_sleep(struct TASK *task);
 
@@ -240,4 +252,23 @@ unsigned int get_day_of_month();
 unsigned int get_day_of_week();
 unsigned int get_mon_hex();
 unsigned int get_year();
-void time_ask(struct SHEET *sht);
+
+/* window.c */
+void make_window8(unsigned char *buf, int xsize, int ysize, char *title, char act);
+void putfonts8_asc_sht(struct SHEET *sht, int x, int y, int c, int b, char *s, int l);
+void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c);
+void make_wtitle8(unsigned char *buf, int xsize, char *title, char act);
+
+/* console.c */
+int cons_newline(int cursor_y, struct SHEET *sheet);
+void console_task(struct SHEET *sheet, unsigned int memtotal);
+
+/* file.c */
+struct FILEINFO {
+	unsigned char name[8], ext[3], type;
+	char reserve[10];
+	unsigned short time, date, clustno;
+	unsigned int size;
+};
+void file_readfat(int *fat, unsigned char *img);
+void file_load(int clustno, int size, char *buf, int *fat, char *img);

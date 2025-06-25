@@ -37,12 +37,3 @@ unsigned int get_year()
 	return (BCD_HEX(read_cmos(CMOS_CUR_CEN))*100)+BCD_HEX(read_cmos(CMOS_CUR_YEAR))-30 + 2010;
 }
 
-void time_ask(struct SHEET *sht)
-{
-	char s[40];
-	sprintf(s, "%d/%d/%d", get_year(), get_mon_hex(), get_day_of_month());
-	putfonts8_asc_sht(sht, sht->bxsize - 130, sht->bysize -20, COL8_000000, COL8_C6C6C6, s, 10);
-	sprintf(s, "%d:%02d", get_hour_hex(), get_min_hex());			
-	putfonts8_asc_sht(sht, sht->bxsize - 45, sht->bysize -20, COL8_000000, COL8_C6C6C6, s, 5);
-	sheet_refresh(sht, sht->bxsize - 130, sht->bysize -20,sht->bxsize - 45 + 5*8, sht->bysize -50+16);
-}

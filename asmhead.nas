@@ -3,7 +3,8 @@
 
 [INSTRSET "i486p"]
 
-VBEMODE	EQU		0x107			; 1024 x  768 x 8bitカラー
+VBEMODE	EQU		0x105			; 1024 x  768 x 8bitカラー
+VBN     EQU     0x0001
 ; （画面モード一覧）
 ;	0x100 :  640 x  400 x 8bitカラー
 ;	0x101 :  640 x  480 x 8bitカラー
@@ -22,7 +23,7 @@ VMODE	EQU		0x0ff2			; 色数に関する情報。何ビットカラーか？
 SCRNX	EQU		0x0ff4			; 解像度のX
 SCRNY	EQU		0x0ff6			; 解像度のY
 VRAM	EQU		0x0ff8			; グラフィックバッファの開始番地
-
+VB      EQU     0x0ffc			; ?机?画是否?示
 		ORG		0xc200			; このプログラムがどこに読み込まれるのか
 
 ; VBE存在確認
@@ -89,6 +90,7 @@ keystatus:
 		INT		0x16 			; keyboard BIOS
 		MOV		[LEDS],AL
 
+		MOV     DWORD [VB], VBN
 ; PICが一切の割り込みを受け付けないようにする
 ;	AT互換機の仕様では、PICの初期化をするなら、
 ;	こいつをCLI前にやっておかないと、たまにハングアップする
