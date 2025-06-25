@@ -5,10 +5,12 @@
 
 		GLOBAL 	_api_putchar, _api_putstr0
 		GLOBAL	_api_end, _api_openwin
-		GLOBAL	_api_fillbox, _api_winstr, _api_point
-		GLOBAL	_api_memman_init, _api_malloc, _api_memman_free
-		GLOBAL	_api_refresh, _api_txtbox, _api_linewin, _api_closewin
+		GLOBAL	_api_boxfilwin, _api_putstrwin, _api_point
+		GLOBAL	_api_initmalloc, _api_malloc, _api_free
+		GLOBAL	_api_refreshwin, _api_txtbox, _api_linewin, _api_closewin
 		GLOBAL	_api_getkey, _api_getmouse
+		GLOBAL	_api_alloctimer, _api_inittimer, _api_settimer, _api_freetimer
+		GLOBAL	_api_beep
 		
 [SECTION .text]
 
@@ -47,7 +49,7 @@ _api_openwin:
 		POP		EDI
 		RET
 		
-_api_winstr:
+_api_putstrwin:
 		PUSH	EBX
 		PUSH	ESI
 		PUSH	EDI
@@ -66,7 +68,7 @@ _api_winstr:
 		POP		EBX
 		RET
 		
-_api_fillbox:
+_api_boxfilwin:
 		PUSH	EBX
 		PUSH	ESI
 		PUSH	EDI
@@ -85,7 +87,7 @@ _api_fillbox:
 		POP		EBX
 		RET
 		
-_api_memman_init:
+_api_initmalloc:
 		PUSH	EBX
 		MOV		EDX,8
 		MOV		EBX,[CS:0x0020]		; malloc領域の番地
@@ -106,7 +108,7 @@ _api_malloc:
 		POP		EBX
 		RET
 		
-_api_memman_free:
+_api_free:
 		PUSH	EBX
 		MOV		EDX,10
 		MOV		EBX,[CS:0X0020]
@@ -131,7 +133,7 @@ _api_point:
 		POP		EDI
 		RET
 		
-_api_refresh:
+_api_refreshwin:
 		PUSH	EBX
 		PUSH	ESI
 		PUSH	EDI
@@ -211,4 +213,42 @@ _api_getmouse:
 		POP		ESI
 		POP		EBX
 		RET
+
+_api_alloctimer:
+		MOV		EDX,18
+		INT 	0x40
+		RET
+		
+_api_inittimer:
+		PUSH	EBX
+		MOV		EDX,19
+		MOV		EBX,[ESP+8]
+		MOV		EAX,[ESP+12]
+		INT 	0x40
+		POP 	EBX
+		RET
+		
+_api_settimer:
+		PUSH	EBX
+		MOV		EDX,20
+		MOV		EBX,[ESP+8]
+		MOV		EAX,[ESP+12]
+		INT		0x40
+		POP		EBX
+		RET
+		
+_api_freetimer:
+		PUSH	EBX
+		MOV		EBX,[ESP+8]
+		MOV		EDX,21
+		INT		0x40
+		POP		EBX
+		RET
+
+_api_beep:
+		MOV		EDX,22
+		MOV		EAX,[ESP+4]
+		INT		0x40
+		RET
+		
 		

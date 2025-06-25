@@ -1,6 +1,6 @@
 OBJS_BOOTPACK = bootpack.obj naskfunc.obj hankaku.obj graphic.obj dsctbl.obj \
 		int.obj fifo.obj keyboard.obj mouse.obj memory.obj sheet.obj timer.obj \
-		mtask.obj cmos.obj console.obj window.obj file.obj operation.obj
+		mtask.obj cmos.obj console.obj window.obj file.obj disk.obj
 
 TOOLPATH = ../z_tools/
 INCPATH  = ../z_tools/nick/
@@ -112,14 +112,63 @@ walk.bim : walk.obj a_nask.obj Makefile
 		walk.obj a_nask.obj
 
 walk.nck : walk.bim Makefile
-	$(BIM2NCK) walk.bim walk.nck 60k
+	$(BIM2NCK) walk.bim walk.nck 48k
 	
+swatch.bim : swatch.obj a_nask.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:swatch.bim stack:1k map:swatch.map\
+		swatch.obj a_nask.obj
+		
+swatch.nck : swatch.bim Makefile
+	$(BIM2NCK) swatch.bim swatch.nck 50k
+	
+beepdown.bim : beepdown.obj a_nask.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:beepdown.bim stack:1k map:beepdown.map\
+		beepdown.obj a_nask.obj
+		
+beepdown.nck : beepdown.bim Makefile
+	$(BIM2NCK) beepdown.bim beepdown.nck 0
+	
+beepup.bim : beepup.obj a_nask.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:beepup.bim stack:1k map:beepup.map\
+		beepup.obj a_nask.obj
+		
+beepup.nck : beepup.bim Makefile
+	$(BIM2NCK) beepup.bim beepup.nck 0
+	
+atimer.bim : atimer.obj a_nask.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:atimer.bim stack:1k map:atimer.map\
+		atimer.obj a_nask.obj
+		
+timer.nck : atimer.bim Makefile
+	$(BIM2NCK) atimer.bim timer.nck 48k
+	
+draw.bim : draw.obj a_nask.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:draw.bim stack:40k map:draw.map\
+		draw.obj a_nask.obj
+		
+draw.nck : draw.bim Makefile
+	$(BIM2NCK) draw.bim draw.nck 48k
+	
+color.bim : color.obj a_nask.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:color.bim stack:24k map:color.map\
+		color.obj a_nask.obj
+		
+color.nck : color.bim Makefile
+	$(BIM2NCK) color.bim color.nck 48k
+
+textbox.bim : textbox.obj a_nask.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:textbox.bim stack:20k map:textbox.map\
+		textbox.obj a_nask.obj
+		
+textbox.nck : textbox.bim Makefile
+	$(BIM2NCK) textbox.bim textbox.nck 48k
 nick.sys : asmhead.bin bootpack.nck Makefile
 	copy /B asmhead.bin+bootpack.nck nick.sys
 
 nick.img : ipl10.bin nick.sys hello5.nck winhello.nck\
 	a.nck hello3.nck winhelo1.nck hello4.nck stars.nck\
-	about.nck lines.nck walk.nck Makefile 
+	about.nck lines.nck walk.nck swatch.nck beepdown.nck\
+	beepup.nck timer.nck draw.nck color.nck textbox.nck Makefile 
 	$(EDIMG)   imgin:../z_tools/fdimg0at.tek \
 		wbinimg src:ipl10.bin len:512 from:0 to:0 \
 		copy from:nick.sys to:@: \
@@ -136,6 +185,13 @@ nick.img : ipl10.bin nick.sys hello5.nck winhello.nck\
 		copy from:about.nck to:@:\
 		copy from:lines.nck to:@:\
 		copy from:walk.nck to:@:\
+		copy from:swatch.nck to:@:\
+		copy from:beepdown.nck to:@:\
+		copy from:beepup.nck to:@:\
+		copy from:timer.nck to:@:\
+		copy from:draw.nck to:@:\
+		copy from:color.nck to:@:\
+		copy from:textbox.nck to:@:\
 		imgout:nick.img
 
 

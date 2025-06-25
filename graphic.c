@@ -4,6 +4,7 @@
 
 void init_palette(void)
 {
+	int r, g, b;
 	static unsigned char table_rgb[16 * 3] = {
 		0x00, 0x00, 0x00,	/*  0:黒 */
 		0xff, 0x00, 0x00,	/*  1:明るい赤 */
@@ -23,16 +24,25 @@ void init_palette(void)
 		0x84, 0x84, 0x84	/* 15:暗い灰色 */
 	};
 	set_palette(0, 15, table_rgb);
+	unsigned char table2[216 * 3];
+	for(r = 0; r < 6; r++){
+		for(g = 0; g < 6; g++){
+			for(b = 0; b < 6; b++){
+				table2[(r + g * 6 + b * 36) * 3 + 0] = r * 51;
+				table2[(r + g * 6 + b * 36) * 3 + 1] = g * 51;
+				table2[(r + g * 6 + b * 36) * 3 + 2] = b * 51;
+			}
+		}
+	}
+	set_palette(16, 231, table2);
 	return;
-
-	/* static char 命令は、データにしか使えないけどDB命令相当 */
 }
 
 void set_palette(int start, int end, unsigned char *rgb)
 {
 	int i, eflags;
-	eflags = io_load_eflags();	/* 割り込み許可フラグの値を記録する */
-	io_cli(); 					/* 許可フラグを0にして割り込み禁止にする */
+	eflags = io_load_eflags();	
+	io_cli(); 					
 	io_out8(0x03c8, start);
 	for (i = start; i <= end; i++) {
 		io_out8(0x03c9, rgb[0] / 4);
@@ -40,7 +50,7 @@ void set_palette(int start, int end, unsigned char *rgb)
 		io_out8(0x03c9, rgb[2] / 4);
 		rgb += 3;
 	}
-	io_store_eflags(eflags);	/* 割り込み許可フラグを元に戻す */
+	io_store_eflags(eflags);	
 	return;
 }
 
@@ -54,9 +64,9 @@ void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, i
 	return;
 }
 
-void init_screen8(char *vram, int x, int y)
+void init_screen8(char *vram, int x, int y, int bc)
 {
-	boxfill8(vram, x, COL8_008484,  0,     0,      x -  1, y - 29);
+	boxfill8(vram, x, bc,  0,     0,      x -  1, y - 29);
 	boxfill8(vram, x, COL8_C6C6C6,  0,     y - 28, x -  1, y - 28);
 	boxfill8(vram, x, COL8_FFFFFF,  0,     y - 27, x -  1, y - 27);
 	boxfill8(vram, x, COL8_C6C6C6,  0,     y - 26, x -  1, y -  1);
@@ -68,10 +78,11 @@ void init_screen8(char *vram, int x, int y)
 	boxfill8(vram, x, COL8_000000,  2,     y -  3, 59,     y -  3);
 	boxfill8(vram, x, COL8_000000, 60,     y - 24, 60,     y -  3);
 
-	boxfill8(vram, x, COL8_848484, x - 47, y - 24, x -  4, y - 24);
-	boxfill8(vram, x, COL8_848484, x - 47, y - 23, x - 47, y -  4);
-	boxfill8(vram, x, COL8_FFFFFF, x - 47, y -  3, x -  4, y -  3);
+	boxfill8(vram, x, COL8_848484, x - 160, y - 24, x -  4, y - 24);
+	boxfill8(vram, x, COL8_848484, x - 160, y - 23, x - 160, y -  4);
+	boxfill8(vram, x, COL8_FFFFFF, x - 160, y -  3, x -  4, y -  3);
 	boxfill8(vram, x, COL8_FFFFFF, x -  3, y - 24, x -  3, y -  3);
+	putfonts8_asc(vram, x, 9, y - 20, COL8_000000, "Start");
 	return;
 }
 
@@ -105,7 +116,6 @@ void putfonts8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s
 }
 
 void init_mouse_cursor8(char *mouse, char bc)
-/* マウスカーソルを準備（16x16） */
 {
 	static char cursor[16][16] = {
 		"**************..",
@@ -153,4 +163,9 @@ void putblock8_8(char *vram, int vxsize, int pxsize,
 		}
 	}
 	return;
+}
+
+int get_bc(char *buf)
+{
+	return buf[1];
 }

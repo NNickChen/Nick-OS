@@ -1,5 +1,5 @@
 void api_end(void);
-int api_openwin(char *buf, int xsize, int ysize, int col_vin, char *title);
+int api_openwin(char *buf, int xsize, int ysize, int col_inv, char *title);
 
 char buf[150 * 50];
 
