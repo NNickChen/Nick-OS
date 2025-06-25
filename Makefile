@@ -11,18 +11,19 @@ default :
 	$(MAKE) nick.img
 	
 	
-nick.img : nick/nick.sys nick/ipl10.nas Makefile\
+nick.img : nick/nick.sys nick/ipl20.nas Makefile\
 	a/a.nck about/about.nck beepdown/beepdown.nck\
 	beepup/beepup.nck color/color.nck draw/draw.nck\
 	hello/hello.nck lines/lines.nck stars/stars.nck\
 	swatch/swatch.nck textbox/textbox.nck timer/timer.nck\
 	walk/walk.nck winhello/winhello.nck sosu/sosu.nck\
-	typeipl/typeipl.nck
+	typeipl/typeipl.nck chinese/chinese.fnt\
+	welcome.txt
 	$(EDIMG)   imgin:../z_tools/fdimg0at.tek \
-		wbinimg src:nick/ipl10.bin len:512 from:0 to:0 \
+		wbinimg src:nick/ipl20.bin len:512 from:0 to:0 \
 		copy from:nick/nick.sys to:@: \
-		copy from:nick/hankaku.txt to:@: \
-		copy from:nick/ipl10.nas to:@: \
+		copy from:nick/english.txt to:@: \
+		copy from:nick/ipl20.nas to:@: \
 		copy from:welcome.txt to:@: \
 		copy from:apilib.h to:@:\
 		copy from:app_make.txt to:@:\
@@ -42,6 +43,7 @@ nick.img : nick/nick.sys nick/ipl10.nas Makefile\
 		copy from:textbox/textbox.nck to:@:\
 		copy from:sosu/sosu.nck to:@:\
 		copy from:typeipl/typeipl.nck to:@:\
+		copy from:chinese/chinese.fnt to:@:\
 		imgout:nick.img
 		
 run :

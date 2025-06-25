@@ -1,5 +1,5 @@
 APP = about
 STACK = 1k
-MALLOC = 47k
+MALLOC = 100k
 
 include ../app_make.txt

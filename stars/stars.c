@@ -5,11 +5,15 @@ int rand(void);
 void HariMain(void)
 {
 	char *buf;
-	int win, i, x, y;
+	int win, i, x, y, langmode = api_getlang();;
 	
 	api_initmalloc();
 	buf = api_malloc(150 * 100);
-	win = api_openwin(buf, 150, 100, -1, "stars");
+	if(langmode == 0){
+		win = api_openwin(buf, 150, 100, -1, "stars");
+	} else {
+		win = api_openwin(buf, 150, 100, -1, "ÐÇ¿Õ");
+	}
 	api_boxfilwin(win + 1, 6, 26, 143, 93, 0);
 	for(i = 0; i < 50; i++){
 		x = (rand() % 137) + 6;

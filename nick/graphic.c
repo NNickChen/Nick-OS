@@ -105,12 +105,55 @@ void putfont8(char *vram, int xsize, int x, int y, char c, char *font)
 	return;
 }
 
+void putfont8_ch(char *vram, int xsize, int x, int y, char c, char *font)
+{
+	int i;
+	char *p, d;
+	for (i = 0; i < 16; i++){
+		p = vram + (y + i) * xsize + x;
+		d = font[i * 2];
+		if ((d & 0x80) != 0) p[0] = c;
+		if ((d & 0x40) != 0) p[1] = c;
+		if ((d & 0x20) != 0) p[2] = c;
+		if ((d & 0x10) != 0) p[3] = c;
+		if ((d & 0x08) != 0) p[4] = c;
+		if ((d & 0x04) != 0) p[5] = c;
+		if ((d & 0x02) != 0) p[6] = c;
+		if ((d & 0x01) != 0) p[7] = c;
+	}
+	return;
+}
+
 void putfonts8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s)
 {
-	extern char hankaku[4096];
-	for (; *s != 0x00; s++) {
-		putfont8(vram, xsize, x, y, c, hankaku + *s * 16);
-		x += 8;
+	extern char english[4096];
+	unsigned char *chinese = (char *) *((int *) 0xfe8);
+	struct TASK *task = task_now();
+	int k, t;
+	char *font;
+	if(task->langmode == 0){
+		for (; *s != 0x00; s++) {
+			putfont8(vram, xsize, x, y, c, english + *s * 16);
+			x += 8;
+		}
+	} else if(task->langmode == 1){
+		for (; *s != 0x00; s++) {
+			if(task->langbyte1 == 0){
+				if(*s >= 0x80){
+					task->langbyte1 = *s;
+				} else {
+					putfont8(vram, xsize, x, y, c, chinese + *s * 16);
+				}
+			} else {
+				k = task->langbyte1 - 0xa1;
+				t = *s - 0xa1;
+				task->langbyte1 = 0;
+				font = chinese + 4096 + (k * 94 + t) * 32;
+				putfont8_ch(vram, xsize, x - 8, y, c, font);
+				putfont8_ch(vram, xsize, x, y, c, font + 1);
+			}
+			x += 8;
+		}
 	}
 	return;
 }

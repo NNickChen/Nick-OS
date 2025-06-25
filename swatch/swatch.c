@@ -4,17 +4,21 @@
 void HariMain(void)
 {
 	char *buf, s[12];
-	int win, timer, sec = 0, min = 0, hou = 0, i;
+	int win, timer, sec = 0, min = 0, hou = 0, i, langmode = api_getlang();
 	
 	api_initmalloc();
 	buf = api_malloc(150 * 50);
-	win = api_openwin(buf, 150, 50, -1, "stop watch");
+	if(langmode == 0){
+		win = api_openwin(buf, 150, 50, -1, "stop watch");
+	} else {
+		win = api_openwin(buf, 150, 50, -1, "Ãë±í");
+	}
 	timer = api_alloctimer();
 	api_inittimer(timer, 128);
 	api_settimer(timer, 100);
 	sprintf(s, "%5d:%02d:%02d", hou, min, sec);         
-	api_boxfilwin(win, 28, 27, 115, 41, 7 /*ç™½è‰²*/);         
-	api_putstrwin(win, 28, 27, 0 /*é»‘è‰²*/, 11, s); 
+	api_boxfilwin(win, 28, 27, 115, 41, 7 /*°×É«*/);         
+	api_putstrwin(win, 28, 27, 0 /*ºÚÉ«*/, 11, s); 
 	for(;;){
 		i = api_getkey(1);
 		if(i == 128){
@@ -29,8 +33,8 @@ void HariMain(void)
 				}
 			}
 			  sprintf(s, "%5d:%02d:%02d", hou, min, sec);         
-			  api_boxfilwin(win, 28, 27, 115, 41, 7 /*ç™½è‰²*/);         
-			  api_putstrwin(win, 28, 27, 0 /*é»‘è‰²*/, 11, s); 
+			  api_boxfilwin(win, 28, 27, 115, 41, 7 /*°×É«*/);         
+			  api_putstrwin(win, 28, 27, 0 /*ºÚÉ«*/, 11, s); 
 			api_settimer(timer, 100);
 		} else {
 			if(i == 0x0a){

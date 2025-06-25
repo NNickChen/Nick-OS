@@ -41,6 +41,8 @@ void asm_inthandler0d(void);
 void asm_inthandler0c(void);
 void asm_inthandler00(void);
 void end_app(void);
+void shutdown(void);
+void shutdown2(void);
 
 /* fifo.c */
 struct FIFO32 {
@@ -228,6 +230,9 @@ struct TASK {
 	struct FILEHANDLE *fhandle;
 	int *fat;
 	char *cmdline;
+	struct MOUSE *mouse;
+	int langmode;
+	unsigned char langbyte1;
 };
 struct TASKLEVEL {
 	int running;

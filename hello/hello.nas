@@ -18,5 +18,5 @@ _HariMain:
 [SECTION .data]
 
 msg:
-	DB	"hello,world!",0x0a,0
+	DB	"ÄãºÃ£¡",0x0a,0
 	

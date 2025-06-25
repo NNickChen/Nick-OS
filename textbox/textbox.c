@@ -7,7 +7,11 @@ void HariMain(void)
 	
 	api_initmalloc();
 	buf = api_malloc(144 * 52);
-	win = api_openwin(buf, 144, 52, -1, "textbox");
+	if(api_getlang() == 0){
+		win = api_openwin(buf, 144, 52, -1, "textbox");
+	} else {
+		win = api_openwin(buf, 144, 52, -1, "ÎÄ±¾ÊäÈë¿ò");
+	}
 	api_txtbox(win, 8, 28, 128, 16, 7);
 	
 	timer = api_alloctimer();

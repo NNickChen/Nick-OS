@@ -2,6 +2,10 @@
 
 bits/
 
+!cons_9x.bat
+!cons_nt.bat
+make.bat
+
 # === 编译／打包产物 ===
 *.class
 *.pyc

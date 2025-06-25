@@ -1,4 +1,4 @@
-OBJS_BOOTPACK = bootpack.obj naskfunc.obj hankaku.obj graphic.obj dsctbl.obj \
+OBJS_BOOTPACK = bootpack.obj naskfunc.obj english.obj graphic.obj dsctbl.obj \
 		int.obj fifo.obj keyboard.obj mouse.obj memory.obj sheet.obj timer.obj \
 		mtask.obj cmos.obj console.obj window.obj file.obj disk.obj
 		
@@ -18,21 +18,21 @@ COPY     = copy
 DEL      = del
 
 default :
-	$(MAKE) ipl10.bin
+	$(MAKE) ipl20.bin
 	$(MAKE) nick.sys
 
-ipl10.bin : ipl10.nas Makefile
-	$(NASK) ipl10.nas ipl10.bin ipl10.lst
+ipl20.bin : ipl20.nas Makefile
+	$(NASK) ipl20.nas ipl20.bin ipl20.lst
 	
 
 asmhead.bin : asmhead.nas Makefile
 	$(NASK) asmhead.nas asmhead.bin asmhead.lst
 
-hankaku.bin : hankaku.txt Makefile
-	$(MAKEFONT) hankaku.txt hankaku.bin
+english.bin : english.txt Makefile
+	$(MAKEFONT) english.txt english.bin
 
-hankaku.obj : hankaku.bin Makefile
-	$(BIN2OBJ) hankaku.bin hankaku.obj _hankaku
+english.obj : english.bin Makefile
+	$(BIN2OBJ) english.bin english.obj _english
 
 bootpack.bim : $(OBJS_BOOTPACK) Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:bootpack.bim stack:3136k map:bootpack.map \
@@ -61,8 +61,12 @@ clean :
 	-$(DEL) *.map
 	-$(DEL) *.bim
 	-$(DEL) *.nck
+	-$(DEL) asmhead.bin
+	-$(DEL) english.bin
+	
 	
 src_only :
 	$(MAKE) clean
 	-$(DEL) nick.sys
+	-$(DEL) ipl20.bin
 	

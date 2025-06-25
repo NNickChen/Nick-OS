@@ -1,5 +1,5 @@
-Nick OS [Version 0.0.6]
-(c) 2018 Nick 
+Nick OS [版本 0.0.7]
+(c) 2018 Nick 保留所有权利
                  
-Welcome to Nick OS!
+欢迎来到Nick OS！
              --Nick

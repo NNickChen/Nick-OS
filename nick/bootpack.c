@@ -13,14 +13,17 @@ void HariMain(void)
 	struct SHTCTL *shtctl;
 	char s[40];
 	int fifobuf[128], keycmd_buf[32];
-	int mx, my, i, x, y, j, mmx = -1, mmy = -1, mmx2 = 0, show = 0;
+	int mx, my, i, x, y, j, mmx = -1, mmy = -1, mmx2 = 0, show = 0, *fat;
+	extern char english[4096];
+	unsigned char *chinese;
+	struct FILEINFO *finfo;
 	unsigned int memtotal;
 	struct MOUSE_DEC mdec;
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 	static char keytable[0x54] = {
-		0,   0,   '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0x08,   0,
+		0,   0,   '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0x08,   0x09,
 		'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', 0x0a,   0,   'A', 'S',
-		'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', 0, '`',   0,   0, 'Z', 'X', 'C', 'V',
+		'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', 0x27, '`',   0,   0x5c, 'Z', 'X', 'C', 'V',
 		'B', 'N', 'M', ',', '.', '/', 0,   0, 0,   ' ', 0,   0,   0,   0,   0,   0,
 		0,  0 ,   0,   0,   0,   0,   0,   0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0
@@ -28,7 +31,7 @@ void HariMain(void)
 	static char keytable1[0x54] = {
 		0, 0, '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', 0x08, 0,
 		'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', 0x0a, 0, 'A', 'S',
-		'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', 0, '~', 0, 0, 'Z', 'X', 'C', 'V', 
+		'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', 0x22, '~', 0, 0x7c, 'Z', 'X', 'C', 'V', 
 		'B', 'N', 'M', '<', '>', '?', 0, 0, 0, ' ', 0,   0,   0,   0,   0,   0,
 		0,  0 ,   0,   0,   0,   0,   0,   0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0
@@ -92,6 +95,29 @@ void HariMain(void)
 	task_a = task_init(memman);
 	fifo.task = task_a;
 	task_run(task_a, 1, 2);
+	if(chinese[4096] != 0xff){
+		task_a->langmode = 1;
+	} else {
+		task_a->langmode = 0;
+	}
+	task_a->langbyte1 = 0;
+	
+	chinese = (unsigned char *) memman_alloc_4k(memman, 169552);
+	fat = (int *) memman_alloc_4k(memman, 4 * 2880);
+	file_readfat(fat, (unsigned char *) (ADR_DISKIMG + 0x000200));
+	finfo = file_search("chinese.fnt", (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
+	if(finfo != 0){
+		file_load(finfo->clustno, finfo->size, chinese, fat, (char *) (ADR_DISKIMG + 0x003e00));
+	} else {
+		for(i = 0; i < 4096; i++){
+			chinese[i] = english[i];
+		}
+		for(i = 4096; i < 169552; i++){
+			chinese[i] = 0xff;
+		}
+	}
+	*((int *) 0xfe8) = (int) chinese;
+	memman_free_4k(memman, (int) fat, 4 * 2880);
 
 	/* sht_back */
 	sht_back  = sheet_alloc(shtctl);
@@ -276,6 +302,15 @@ void HariMain(void)
 					sheet_updown(key_win, shtctl->top);
 					keywin_on(key_win);
 				}
+				if (key_shift != 0 && i == 256 + 0x3d){
+					if(key_win->task->langmode == 0){
+						key_win->task->langmode = 1;
+						fifo32_put(&key_win->task->fifo, 5);
+					} else {
+						key_win->task->langmode = 0;
+						fifo32_put(&key_win->task->fifo, 6);
+					}
+				}
 			} else if (512 <= i && i <= 767) {
 				if (mouse_decode(&mdec, i - 512) != 0) {
 					mx += mdec.x;
@@ -423,11 +458,16 @@ struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal)
 	sht = sheet_alloc(shtctl);
 	buf = (unsigned char *) memman_alloc_4k(memman, 500 * 500);
 	sheet_setbuf(sht, buf, 500, 500, -1);
-	make_window8(buf, 500, 500, "console", 0);
+	if(task_now()->langmode == 0){
+		make_window8(buf, 500, 500, "Console", 0);
+		sht->title = "Console";
+	} else {
+		make_window8(buf, 500, 500, "命令行窗口", 0);
+		sht->title = "命令行窗口";
+	}
 	make_textbox8(sht, 8, 28, 484, 463, COL8_000000);
 	sht->task = open_constask(sht, memtotal);
 	sht->flags |= 0x20;
-	sht->title = "console";
 	return sht;
 }
 

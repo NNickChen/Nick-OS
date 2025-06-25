@@ -14,6 +14,8 @@ void cmd_bc(struct CONSOLE *cons, char *cmdline);
 void cmd_exit(struct CONSOLE *cons, int *fat);
 void cmd_start(struct CONSOLE *cons, char *cmdline, int memtotal);
 void cmd_ncst(struct CONSOLE *cons, char *cmdline, int memtotal);
+void cmd_langmode(struct CONSOLE *cons, char *cmdline);
+void cmd_getlang(struct CONSOLE *cons);
 int cmd_run(struct CONSOLE *cons, char *cmdline, int *fat);
 void linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col);
 int strtol(char *s, char **endp, int base);
@@ -25,6 +27,7 @@ struct MOUSE {
 
 void cons_newline(struct CONSOLE *cons)
 {
+	struct TASK *task = task_now();
 	int x, y;
 	struct SHEET *sheet = cons->sht;
 	if(cons->cursor_y < 28 + 447){
@@ -33,14 +36,17 @@ void cons_newline(struct CONSOLE *cons)
 		if(sheet != 0){
 			for(y = 28; y < 28 + 447; y ++){
 				for(x = 8; x < 8 + 484; x ++){
-					sheet->buf[x + y * sheet->bxsize] = sheet->buf[x + (y + 16) * sheet->bxsize];
+					sheet->buf[x + y * sheet->bxsize] = sheet->buf[x + (y + 17) * sheet->bxsize];
 				}
 			}
 			boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 28 + 447, 8 + 484, 28 + 463);
-			sheet_refresh(sheet, 8, 28, 8 + 484, 28 + 463);
+			sheet_refresh(sheet, 8, 28, 8 + 484, 28 + 464);
 		}
 	}
 	cons->cursor_x = 8;
+	if(task->langmode == 1 && task->langbyte1 != 0){
+		cons->cursor_x += 8;
+	}
 	return;
 }
 
@@ -101,15 +107,14 @@ int *api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax)
 {
 	struct TASK *task = task_now();
 	struct FIFO32 *sys_fifo = (struct FIFO32 *) *((int *) 0xfec);
-	int ds_base = task->ds_base, i, j;
+	int ds_base = task->ds_base, i;
 	struct CONSOLE *cons = task->cons;
 	struct SHTCTL *shtctl = (struct SHTCTL *) *((int *) 0xfe4);
 	struct SHEET *sht;
-	struct MOUSE *mouse = (struct MOUSE *) *((int *) 0xfe0);
+	struct MOUSE *mouse = task->mouse;
 	struct FILEINFO *finfo;
 	struct FILEHANDLE *fh;
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
-	char s[10];
 	mouse->phase = 0;
 	int *reg = &eax + 1;
 	/* reg[0] : EDI,   reg[1] : ESI,   reg[2] : EBP,   reg[3] : ESP */
@@ -362,6 +367,8 @@ int *api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax)
 			}
 		}
 		reg[7] = i;
+	} else if(edx == 29){
+		reg[7] = task->langmode;
 	}
 	return 0;
 }
@@ -417,6 +424,7 @@ void linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col)
 	
 void cmd(struct CONSOLE *cons, unsigned int memtotal, int *fat, char *cmdline)
 {
+	struct TASK *task = task_now();
 	if(strcmp(cmdline, "mem") == 0 && cons->sht != 0){
 		cmd_mem(cons, memtotal);
 	} else if (strcmp(cmdline, "cls") == 0 && cons->sht != 0){
@@ -437,9 +445,19 @@ void cmd(struct CONSOLE *cons, unsigned int memtotal, int *fat, char *cmdline)
 		cmd_start(cons, cmdline, memtotal);
 	} else if (strncmp(cmdline, "ncst ", 5) == 0){
 		cmd_ncst(cons, cmdline, memtotal);
+	} else if (strncmp(cmdline, "langmode ", 9) == 0){
+		cmd_langmode(cons, cmdline);
+	} else if (strcmp(cmdline, "shutdown") == 0){
+		shutdown2();
+	} else if (strcmp(cmdline, "getlang") == 0){
+		cmd_getlang(cons);
 	} else if (cmdline[0] != 0){		
 		if(cmd_run(cons, cmdline, fat) == 0){
-		cons_putstr0(cons, "Bad command.\n\n");
+			if(task->langmode == 0){
+				cons_putstr0(cons, "Bad command.\n\n");
+			} else {
+				cons_putstr0(cons, "不是正确的命令，也不是可运行的程序。\n\n");
+			}
 		}
 	}
 	return;
@@ -448,9 +466,13 @@ void cmd(struct CONSOLE *cons, unsigned int memtotal, int *fat, char *cmdline)
 void cmd_mem(struct CONSOLE *cons, unsigned int memtotal)
 {
 	char s[30];
+	struct TASK *task = task_now();
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
-	
-	sprintf(s, "total   %dMB\nfree %dKB\n\n", memtotal / (1024 * 1024), memman_total(memman) / 1024);
+	if(task->langmode == 0){
+		sprintf(s, "total   %dMB\nfree %dKB\n\n", memtotal / (1024 * 1024), memman_total(memman) / 1024);
+	} else {
+		sprintf(s, "合计   %dMB\n剩余 %dKB\n\n", memtotal / (1024 * 1024), memman_total(memman) / 1024);
+	}
 	cons_putstr0(cons, s);
 	return;
 }
@@ -468,7 +490,8 @@ void cmd_dir(struct CONSOLE *cons)
 	struct FILEINFO *finfo = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);
 	int x, y;
 	char s[50];
-	int size, count = 0;
+	int size = 0, count = 0;
+	struct TASK *task = task_now();
 	for(x = 0; x < 224; x ++){
 		if(finfo[x].name[0] == 0x00){
 			break;
@@ -493,7 +516,11 @@ void cmd_dir(struct CONSOLE *cons)
 			}
 		}
 	}		
-	sprintf(s, "  %d files	%d Bytes\n  %dBytes free\n", count, size, 1474560 - size);
+	if(task->langmode == 0){
+		sprintf(s, "  %d files	%d Bytes\n  %dBytes free\n", count, size, 1474560 - size);
+	} else {
+		sprintf(s, "  %d 个文件	%d 字节\n  %d 可用字节\n", count, size, 1474560 - size);
+	}
 	cons_putstr0(cons, s);
 	cons_newline(cons);
 	return;
@@ -504,15 +531,22 @@ void cmd_type(struct CONSOLE *cons, int *fat, char *cmdline)
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 	char *p;
 	struct FILEINFO *finfo = file_search(cmdline + 5, (struct FILEINFO *)(ADR_DISKIMG + 0x002600), 224);
-	
+	struct TASK *task = task_now();
+	int i;
+
 	if(finfo != 0){
 		p = (char *) memman_alloc_4k(memman, finfo->size);
 		file_load(finfo->clustno, finfo->size, p, fat, (char *)(ADR_DISKIMG + 0x003e00));
-		cons->cursor_x = 8;
-		cons_putstr1(cons, p, finfo->size);
+		for (i = 0; i < finfo->size; i++){
+			cons_putchar(cons, p[i], 1);					
+		}	
 		memman_free_4k(memman, (int) p, finfo->size);
 	} else {
-		cons_putstr0(cons, "File not found.\n");
+		if(task->langmode == 0){
+			cons_putstr0(cons, "File not found.\n");
+		} else {
+			cons_putstr0(cons, "找不到该文件。\n");
+		}
 	}
 	cons_newline(cons);
 	return;
@@ -521,8 +555,12 @@ void cmd_type(struct CONSOLE *cons, int *fat, char *cmdline)
 void cmd_time(struct CONSOLE *cons)
 {
 	char s[30];
-	
-	sprintf(s, "time:       %d:%02d\n\n", get_hour_hex(), get_min_hex());
+	struct TASK *task = task_now();
+	if(task->langmode == 0){
+		sprintf(s, "time:       %d:%02d\n\n", get_hour_hex(), get_min_hex());
+	} else {
+		sprintf(s, "当前时间:       %d:%02d\n\n", get_hour_hex(), get_min_hex());
+	}
 	cons_putstr0(cons, s);
 	return;
 }
@@ -530,8 +568,12 @@ void cmd_time(struct CONSOLE *cons)
 void cmd_date(struct CONSOLE *cons)
 {
 	char s[30];
-	
-	sprintf(s, "date:  %d.%d.%d\n\n", get_year(), get_mon_hex(), get_day_of_month());
+	struct TASK *task = task_now();
+	if(task->langmode == 0){
+		sprintf(s, "date:  %d/%d/%d\n\n", get_year(), get_mon_hex(), get_day_of_month());
+	} else {
+		sprintf(s, "当前日期:  %d/%d/%d\n\n", get_year(), get_mon_hex(), get_day_of_month());
+	}
 	cons_putstr0(cons, s);
 	return;
 }
@@ -594,6 +636,39 @@ void cmd_ncst(struct CONSOLE *cons, char *cmdline, int memtotal)
 	return;
 }
 
+void cmd_langmode(struct CONSOLE *cons, char *cmdline)
+{
+	struct TASK *task = task_now();
+	int langmode = strtol(cmdline + 9, 0, 10);
+	if(langmode <= 1){
+		task->langmode = langmode;
+		if(langmode == 0){
+			cons_putstr0(cons, "English ASCII mode.\n\n");
+		} else {
+			cons_putstr0(cons, "中文EUC模式。\n\n");
+		}
+	} else {
+		if(task->langmode == 0){
+			cons_putstr0(cons, "Mode number error.\n\n");
+		} else {
+			cons_putstr0(cons, "此模式不存在。\n\n");
+		}
+	}
+	return;
+}
+
+void cmd_getlang(struct CONSOLE *cons)
+{
+	struct TASK *task = task_now();
+	int langmode = task->langmode;
+	if(langmode != 0){
+		cons_putstr0(cons, "当前模式：中文EUC模式。\n\n");
+	} else {
+		cons_putstr0(cons, "mode:English ASCII mode.\n\n");
+	}
+	return;
+}
+		
 int cmd_run(struct CONSOLE *cons, char *cmdline, int *fat)
 {
 	int x, i, segsiz, esp, datsiz, nckdat;
@@ -636,6 +711,7 @@ int cmd_run(struct CONSOLE *cons, char *cmdline, int *fat)
 				q[esp + i] = p[nckdat + i];
 			}
 			start_app(0x1b, 0 * 8 + 4, esp, 1 * 8 + 4, &(task->tss.esp0));
+			task->langbyte1 = 0;
 			for(i = 0; i < MAX_SHEETS; i ++){
 				sht = &ctl->sheets0[i];
 				if((sht->flags & 0x10) != 0 && sht->task == task){
@@ -653,12 +729,16 @@ int cmd_run(struct CONSOLE *cons, char *cmdline, int *fat)
 			io_out8(0x61, i & 0xd);
 			memman_free_4k(memman, (int) q, segsiz);
 		} else {
-			cons_putstr0(cons, ".nck file format error.\n");
+			if(task->langmode == 0){
+				cons_putstr0(cons, ".nck file format error.\n");
+			} else {
+				cons_putstr0(cons, ".nck 文件格式错误。\n");
+			}
 		}
 		memman_free_4k(memman, (int) p, finfo->size);
 		cons_newline(cons);
 		return 1;
-	}
+	} 
 	return 0;
 }
 
@@ -669,7 +749,7 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
 	struct CONSOLE cons;
 	cons.sht = sheet;
 	cons.cursor_x = 8;
-	cons.cursor_y = 60;
+	cons.cursor_y = 76;
 	cons.cursor_c = -1;
 	task->cons = &cons;
 	char cmdline[60], s[2];
@@ -677,20 +757,31 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 	int *fat = (int *) memman_alloc_4k(memman, 4 * 2880);
 	struct FILEHANDLE fhandle[8];
+	unsigned char *chinese = (unsigned char *) *((int *) 0xfe8);
+	if(chinese[4096] != 0xff){
+		task->langmode = 1;
+	} else {
+		task->langmode = 0;
+	}
+	task->langbyte1 = 0;
 	if(cons.sht != 0){
 		cons.timer = timer_alloc();
 		timer_init(cons.timer, &task->fifo, 1);
 		timer_settime(cons.timer, 50);
 	}
-
 	file_readfat(fat, (unsigned char *)(ADR_DISKIMG + 0x000200));
 	for(i = 0; i < 8; i++){
 		fhandle[i].buf = 0;
 	}
 	task->fhandle = fhandle;
 	task->fat = fat;
-	putfonts8_asc_sht(cons.sht, 8, 28, COL8_FFFFFF, COL8_000000, "Nick OS [version 0.0.6]", 23);
-	putfonts8_asc_sht(cons.sht, 8, 44, COL8_FFFFFF, COL8_000000, "(c) 2018 Nick", 13);
+	putfonts8_asc_sht(cons.sht, 8, 28, COL8_FFFFFF, COL8_000000, "Nick OS [版本  0.0.7]", 23);
+	putfonts8_asc_sht(cons.sht, 8, 44, COL8_FFFFFF, COL8_000000, "(c) 2018 Nick 保留所有权利。", 26);
+	if(task->langmode == 0){
+		putfonts8_asc_sht(cons.sht, 8, 60, COL8_FFFFFF, COL8_000000, "mode:English ASCII mode.", 19);
+	} else if(task->langmode == 1){
+		putfonts8_asc_sht(cons.sht, 8, 60, COL8_FFFFFF, COL8_000000, "当前显示模式：中文EUC模式。", 30);
+	}
 	cons_putchar(&cons, '>', 1);
 
 	for (;;) {
@@ -726,6 +817,18 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
 			}
 			if(i == 4){
 				cmd_exit(&cons, fat);
+			}
+			if(i == 5){
+				if(cons.sht != 0){
+					cons_putstr0(&cons, "switch(key):\n中文EUC模式。\n\n");
+					cons_putchar(&cons, '>', 1);
+				}
+			}
+			if(i == 6){
+				if(cons.sht != 0){
+					cons_putstr0(&cons, "switch(key):\nEnglish ASCII mode.\n\n");
+					cons_putchar(&cons, '>', 1);
+				}
 			}
 			if (256 <= i && i <= 511) {
 				if (i == 8 + 256) {
@@ -770,7 +873,11 @@ int *inthandler0d(int *esp)
 	char s[30];
 	struct TASK *task = task_now();
 	struct CONSOLE *cons = task->cons;
-	cons_putstr0(cons, "\nINT 0D :\n General Protected Exception.\n");
+	if(task->langmode != 0){
+		cons_putstr0(cons, "\nINT 0D :\n 一般保护异常。\n");
+	} else {
+		cons_putstr0(cons, "\nINT 0D :\n General Protected Exception.\n");
+	}
 	sprintf(s, "EIP = %08X\n", esp[11]);
 	cons_putstr0(cons, s);
 	return &(task->tss.esp0);
@@ -781,7 +888,11 @@ int *inthandler0c(int *esp)
 	char s[30];
 	struct TASK *task = task_now();
 	struct CONSOLE *cons = task->cons;
-	cons_putstr0(cons, "\nINT 0C :\n Stack Exception.\n");
+	if(task->langmode != 0){
+		cons_putstr0(cons, "\nINT 0C :\n 栈异常。\n");
+	} else {
+		cons_putstr0(cons, "\nINT 0C :\n Stack Exception.\n");
+	}
 	sprintf(s, "EIP = %08X\n", esp[11]);
 	cons_putstr0(cons, s);
 	return &(task->tss.esp0);
@@ -792,7 +903,11 @@ int *inthandler00(int *esp)
 	char s[30];
 	struct TASK *task = task_now();
 	struct CONSOLE *cons = task->cons;
-	cons_putstr0(cons, "\nINT 00 :\n Devide '0' Exception.\n");
+	if(task->langmode != 0){
+		cons_putstr0(cons, "\nINT 00 :\n 除‘0’异常。\n");
+	} else {
+		cons_putstr0(cons, "\nINT 00 :\n Devide '0' Exception.\n");
+	}
 	sprintf(s, "EIP = %08X\n", esp[11]);
 	cons_putstr0(cons, s);
 	return &(task->tss.esp0);

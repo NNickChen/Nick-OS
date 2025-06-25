@@ -9,17 +9,22 @@ void HariMain(void)
 	
 	api_initmalloc();
 	buf = api_malloc(150 * 50);
-	win = api_openwin(buf, 150, 50, -1, "timer");
-
-	api_boxfilwin(win, 28, 27, 115, 41, 7);
-	sprintf(s, "%02d:%02d:%02d", hou, min, sec);
-	api_putstrwin(win, 28, 27, 0, 8, s);
+	if(api_getlang == 0){
+		win = api_openwin(buf, 150, 50, -1, "timer");
+	} else {
+		win = api_openwin(buf, 150, 50, -1, "¼ÆÊ±Æ÷");
+	}
 
 go:	
 	key_to = 0;
 	hou = 0;
 	min = 0;
 	sec = 0;
+	api_boxfilwin(win + 1, 28, 27, 115, 41, 7);
+	sprintf(s, "%02d:%02d:%02d", hou, min, sec);
+	api_boxfilwin(win + 1, (3 - key_to) * 26, 27, (3 - key_to) * 28 + 24, 41, 8);
+	api_putstrwin(win + 1, 34, 27, 0, 8, s);
+	api_refreshwin(win, 28, 27, 115, 43);
 	for(;;){
 		i = api_getkey(1);
 		if(key_to == 0){
@@ -69,10 +74,19 @@ go:
 		if(i == 0x0a){
 			break;
 		}
-		api_boxfilwin(win, 28, 27, 115, 41, 7);
+		if(i == 251){
+			goto fin;
+		}
+		api_boxfilwin(win + 1, 28, 27, 115, 41, 7);
 		sprintf(s, "%02d:%02d:%02d", hou, min, sec);
-		api_putstrwin(win, 28, 27, 0, 8, s);
+		api_boxfilwin(win + 1, (3 - key_to) * 26, 27, (3 - key_to) * 28 + 24, 41, 8);
+		api_putstrwin(win + 1, 34, 27, 0, 8, s);
+		api_refreshwin(win, 28, 27, 115, 43);
 	}
+	api_boxfilwin(win + 1, 28, 27, 115, 41, 7);
+	sprintf(s, "%02d:%02d:%02d", hou, min, sec);
+	api_putstrwin(win + 1, 34, 27, 0, 8, s);
+	api_refreshwin(win, 28, 27, 115, 43);
 	if(min > 0 && sec == 0){
 		sec = 60;
 		min--;
@@ -101,10 +115,15 @@ go:
 					}
 				}
 			}
-			api_boxfilwin(win, 28, 27, 115, 41, 7);
+			api_boxfilwin(win + 1, 28, 27, 115, 41, 7);
 			sprintf(s, "%02d:%02d:%02d", hou, min, sec);
-			api_putstrwin(win, 28, 27, 0, 8, s);
+			api_putstrwin(win + 1, 34, 27, 0, 8, s);
 			api_settimer(timer, 100);
+			api_refreshwin(win, 28, 27, 115, 43);
+		} else if(i == 251){
+			api_end();
+		} else if(i == 0x0a){
+			goto go;
 		}
 	}
 	api_beep(200000);
@@ -120,9 +139,10 @@ go:
 			api_settimer(timer, 100);
 		} else if(i == 0x0a){
 			goto go;
-		} else {
-			break;
+		} else if(i == 251){
+			goto fin;
 		}
 	}
+fin:
 	api_end();
 }
