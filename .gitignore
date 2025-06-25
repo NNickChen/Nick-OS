@@ -6,6 +6,15 @@ bits/
 *.class
 *.pyc
 *.o
+*.obj
+*.img
+*.bin
+*.bim
+*.sys
+*.hrb
+*.nck
+*.lst
+
 build/
 dist/
 out/
